@@ -6,10 +6,11 @@ export default function App({ Component }: AppProps) {
   return (
     <html data-custom="data">
       <Head>
-        <title>Fresh</title>
+        <title>Wann Kommt Kevin Online?</title>
         <link rel="stylesheet" href={asset("style.css")} />
       </Head>
-      <body class="bg-domo bg-auto bg-center bg-no-repeat h-screen w-screen flex-col text-white flex justify-items-center items-center">
+      <body class="bg-auto bg-center bg-no-repeat h-screen w-screen flex-col text-white flex justify-items-center items-center">
+        <img src="/domo.webp" id="image-background" />
         <video
           autoPlay
           muted

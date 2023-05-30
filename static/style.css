@@ -18,3 +18,13 @@
   object-fit: cover;
   transform: scale(1.1); 
 }
+
+#image-background {
+  position: fixed;
+  height: 100vh;
+  width: 100vw;
+  z-index: -1;
+  filter: blur(5px);
+  object-fit: cover;
+  transform: scale(1.1); 
+}
