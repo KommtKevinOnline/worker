@@ -5,7 +5,10 @@ export default {
   theme: {
     extend: {
       backgroundImage: {
-        'domo': "url('/domo.webp')",
+        "domo": "url('/domo.webp')",
+      },
+      backgroundColor: {
+        "primary": "#a55eea",
       }
     }
   }

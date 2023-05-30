@@ -12,7 +12,7 @@ export const handler: Handlers<Video[] | null> = {
 export default function Home({ data }: PageProps<Video[] | null>) {
   return (
     <>
-      <div class="p-4 mx-auto max-w-screen-md backdrop-blur-xl">
+      <div class="flex-1">
         <h1 class="text-7xl font-bold custom-text-shadow">
           Kommt Kevin heute Online?
         </h1>
