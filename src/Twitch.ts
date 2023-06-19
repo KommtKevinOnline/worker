@@ -46,6 +46,11 @@ export class TwitchApi {
     });
     const { data } = await res.json();
 
+    if (!data) {
+      console.debug(data);
+      throw new Error("No data returned from Twitch API.");
+    }
+
     return data.map((video: Video) => {
       return {
         ...video,
