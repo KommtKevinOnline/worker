@@ -4,22 +4,22 @@ import { M3U8Parser } from "./M3U8Parser.ts";
 import { TwitchApi } from "./Twitch.ts";
 import { WitAi } from "./WitAi.ts";
 
-export async function PollNewVods (userId: string) {
-  const LAST_ID = await Deno.readTextFile('./data/LAST_ID.txt')
+export async function PollNewVods(userId: string) {
+  const LAST_ID = await Deno.readTextFile("./data/LAST_ID.txt");
 
-  const videos = await TwitchApi.getVideos(userId)
+  const videos = await TwitchApi.getVideos(userId);
 
-  const latestVideo = videos[0]
+  const latestVideo = videos[0];
 
   if (latestVideo.id === LAST_ID) {
-    console.log('No new vod found.')
+    console.log("No new vod found.");
     return;
   }
 
-  console.log("Found new vod. Downloading...")
-  const vodCredentials = await TwitchApi.fetchVodCredentials(latestVideo.id)
+  console.log("Found new vod. Downloading...");
+  const vodCredentials = await TwitchApi.fetchVodCredentials(latestVideo.id);
 
-  const m3u8 = await TwitchApi.getVodM3u8(latestVideo.id, vodCredentials)
+  const m3u8 = await TwitchApi.getVodM3u8(latestVideo.id, vodCredentials);
 
   const manifest = M3U8Parser.parse(m3u8);
   const bestPlaylist = manifest.playlists[0];
@@ -28,12 +28,12 @@ export async function PollNewVods (userId: string) {
   (playlistBaseURL as string[]).pop();
   playlistBaseURL = (playlistBaseURL as string[]).join("/");
 
-  const playlist = await TwitchApi.fetchPlaylist(bestPlaylist.uri)
+  const playlist = await TwitchApi.fetchPlaylist(bestPlaylist.uri);
   const segments = playlist.segments;
 
   await Deno.mkdir(`./data/${latestVideo.id}`);
 
-  const vodFileName = `./data/${latestVideo.id}/vod.ts`
+  const vodFileName = `./data/${latestVideo.id}/vod.ts`;
   const file = await Deno.create(vodFileName);
   for (let i = segments.length - 20; i < segments.length; i++) {
     const segment = segments[i];
@@ -41,17 +41,17 @@ export async function PollNewVods (userId: string) {
   }
 
   file.close();
-  console.log("Successfully downloaded vod. Converting to mp3...")
+  console.log("Successfully downloaded vod. Converting to mp3...");
 
   const audio = await AudioConverter.convert(vodFileName);
 
-  console.log("Successfully converted to mp3. Speech to Text...")
+  console.log("Successfully converted to mp3. Speech to Text...");
 
   const transcript = await WitAi.dictation(await Deno.readFile(audio));
 
   await Deno.writeTextFile(`./data/${latestVideo.id}/vod.txt`, transcript);
 
-  console.log(`${latestVideo.id} ready.`)
+  console.log(`${latestVideo.id} ready.`);
 
-  await Deno.writeTextFile('./data/LAST_ID.txt', latestVideo.id);
+  await Deno.writeTextFile("./data/LAST_ID.txt", latestVideo.id);
 }
