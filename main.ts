@@ -40,11 +40,14 @@ new Cron("0 0 * * * *", () => {
   pollVods();
 });
 
-for await (const keypress of readKeypress()) {
-  if (keypress.key === 'm') {
-    console.log("Manual Download")
-    pollVods();
+if (Deno.isatty(Deno.stdin.rid)) {
+  for await (const keypress of readKeypress()) {
+    if (keypress.key === 'm') {
+      console.log("Manual Download")
+      pollVods();
+    }
   }
 }
+
 
 // PollNewVods('50985620')
