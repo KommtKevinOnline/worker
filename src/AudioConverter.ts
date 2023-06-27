@@ -1,4 +1,4 @@
-import { ffmpeg } from "https://deno.land/x/deno_ffmpeg@v3.1.0/mod.ts";
+import { ffmpeg } from "../deps.ts";
 
 export class AudioConverter {
   public static async convert(path: string) {

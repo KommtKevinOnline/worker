@@ -34,6 +34,7 @@ export class TwitchApi {
 
     const params = new URLSearchParams({
       user_id: userId,
+      type: 'archive',
     });
 
     const headers = new Headers({
