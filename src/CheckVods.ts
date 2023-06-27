@@ -54,4 +54,6 @@ export async function PollNewVods(userId: string) {
   console.log(`${latestVideo.id} ready.`);
 
   await Deno.writeTextFile("./data/LAST_ID.txt", latestVideo.id);
+
+  return { transcript, vodid: latestVideo.id };
 }
