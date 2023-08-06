@@ -4,7 +4,7 @@ export class AudioConverter {
   public static async convert(path: string) {
     const saveName = `.${path.split(".")[1]}.mp3`;
 
-    await ffmpeg({ ffmpegDir: "/usr/sbin/ffmpeg", input: path })
+    await ffmpeg({ ffmpegDir: "/usr/bin/ffmpeg", input: path })
       .audioFilters({
         filterName: "silenceremove",
         options: {
