@@ -3,6 +3,7 @@ import { readKeypress } from "https://deno.land/x/keypress@0.0.11/mod.ts";
 import { Cron } from "https://deno.land/x/croner@6.0.3/dist/croner.js";
 import { PollNewVods } from "./src/CheckVods.ts";
 import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
+import { Classifier } from "./src/Classifier.ts";
 
 if (!Deno.env.get("POSTGRES_PASSWORD")) {
   throw new Error("POSTGRES_PASSWORD Env Variable not set.");
@@ -28,6 +29,19 @@ async function pollVods() {
 
   if (result) {
     const { vodid, transcript } = result;
+
+    const comesOnline = Classifier.decide(transcript)
+
+    const date = new Date();
+    date.setDate(date.getDate() + 1)
+    date.setHours(15, 0, 0, 0)
+
+    if (comesOnline) {
+      await client.queryArray({
+        args: { date },
+        text: "INSERT INTO upcoming_streams (date) VALUES ($DATE)",
+      });
+    }
 
     await client.queryArray({
       args: { vodid, transcript },
