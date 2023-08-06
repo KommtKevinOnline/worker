@@ -7,6 +7,13 @@ import { WitAi } from "./WitAi.ts";
 export async function PollNewVods(userId: string) {
   const LAST_ID = await Deno.readTextFile("./data/LAST_ID.txt");
 
+  const res = await fetch('https://kommtkevinonline.de/api/twitch/stream/50985620')
+  const data = await res.json()
+  if (data.type === 'live') {
+    console.log("Streamer is live. Skipping download.")
+    return;
+  }
+
   const videos = await TwitchApi.getVideos(userId);
 
   const latestVideo = videos[0];
