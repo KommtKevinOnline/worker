@@ -3,9 +3,10 @@ import { ChunkDownloader } from "./ChunkDownloader.ts";
 import { M3U8Parser } from "./M3U8Parser.ts";
 import { TwitchApi } from "./Twitch.ts";
 import { WitAi } from "./WitAi.ts";
+import { Client } from "../deps.ts"
 
-export async function PollNewVods(userId: string) {
-  const LAST_ID = await Deno.readTextFile("./data/LAST_ID.txt");
+export async function PollNewVods(userId: string, client: Client) {
+  const LAST_ID = (await client.queryObject<{ vodid: string }>('SELECT vodid FROM vods ORDER BY vodid DESC LIMIT 1')).rows[0]?.vodid;
 
   const res = await fetch('https://kommtkevinonline.de/api/twitch/stream/50985620')
   const data = await res.json()
@@ -38,7 +39,7 @@ export async function PollNewVods(userId: string) {
   const playlist = await TwitchApi.fetchPlaylist(bestPlaylist.uri);
   const segments = playlist.segments;
 
-  await Deno.mkdir(`./data/${latestVideo.id}`);
+  await Deno.mkdir(`./data/${latestVideo.id}`, { recursive: true });
 
   const vodFileName = `./data/${latestVideo.id}/vod.ts`;
   const file = await Deno.create(vodFileName);

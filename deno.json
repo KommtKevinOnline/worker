@@ -1,6 +1,6 @@
 {
   "lock": false,
   "tasks": {
-    "start": "deno run -A --watch main.ts"
+    "dev": "deno run -A --watch main.ts"
   }
 }

@@ -1,5 +1,4 @@
 import "https://deno.land/std@0.192.0/dotenv/load.ts";
-import { readKeypress } from "https://deno.land/x/keypress@0.0.11/mod.ts";
 import { Cron } from "https://deno.land/x/croner@6.0.3/dist/croner.js";
 import { PollNewVods } from "./src/CheckVods.ts";
 import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
@@ -25,7 +24,7 @@ await client.connect();
 console.log("Started. Polling every hour.");
 
 async function pollVods() {
-  const result = await PollNewVods("50985620");
+  const result = await PollNewVods("50985620", client);
 
   if (result) {
     const { vodid, transcript } = result;
@@ -54,14 +53,4 @@ new Cron("0 0 * * * *", () => {
   pollVods();
 });
 
-if (Deno.isatty(Deno.stdin.rid)) {
-  for await (const keypress of readKeypress()) {
-    if (keypress.key === 'm') {
-      console.log("Manual Download")
-      pollVods();
-    }
-  }
-}
-
-
-// PollNewVods('50985620')
+pollVods();

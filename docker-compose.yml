@@ -3,9 +3,13 @@ version: '3.2'
 services:
   postgres:
     image: postgres:latest
+    user: postgres
     environment:
+      POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DATABASE}
+    ports:
+      - "5432:5432"
     volumes:
       - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
     healthcheck:
@@ -13,13 +17,14 @@ services:
       interval: 10s
       timeout: 60s
       retries: 5
-      start_period: 20s 
+      start_period: 20s
   web:
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - ./:/app
+    command: "deno run -A --watch main.ts"
     depends_on:
       postgres:
         condition: service_healthy
