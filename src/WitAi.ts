@@ -1,7 +1,14 @@
-export class WitAi {
-  private static BASE_URL = "https://api.wit.ai";
+import { Logger } from "../deps.ts";
+import { Transcriber } from "./interfaces/Transcriber.ts";
 
-  private static parseResponse(response: string) {
+export class WitAi implements Transcriber {
+  private BASE_URL = "https://api.wit.ai";
+
+  constructor(
+    private readonly logger: Logger,
+  ) { }
+
+  private parseResponse(response: string) {
     const chunks = response
       .split("\r\n")
       .map((x: string) => x.trim())
@@ -22,7 +29,7 @@ export class WitAi {
     return jsons;
   }
 
-  public static async dictation(audio: Uint8Array): Promise<string> {
+  public async transcribe(audio: Uint8Array): Promise<string> {
     const accessToken = Deno.env.get("WITAI_ACCESS_TOKEN");
 
     if (!accessToken) {
@@ -63,6 +70,8 @@ export class WitAi {
         }
       }
     }
+
+    this.logger.info("Successfully transcribed vod");
 
     return texts.join("\n");
   }

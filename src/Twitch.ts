@@ -1,10 +1,14 @@
 import { M3U8Parser } from "./M3U8Parser.ts";
-import { Video } from "./interfaces/Video.ts";
+import { Video } from "./types/Video.ts";
 
 export class TwitchApi {
-  private static BASE_URL = "https://api.twitch.tv/helix";
+  private BASE_URL = "https://api.twitch.tv/helix";
 
-  private static async getToken(): Promise<string> {
+  constructor(
+    private readonly m3U8Parser: M3U8Parser,
+  ) { }
+
+  private async getToken(): Promise<string> {
     const client_id = Deno.env.get("TWITCH_CLIENT_ID");
     const client_secret = Deno.env.get("TWITCH_CLIENT_SECRET");
 
@@ -27,7 +31,7 @@ export class TwitchApi {
     return data.access_token;
   }
 
-  public static async getVideos(userId: string): Promise<Video[]> {
+  public async getVideos(userId: string): Promise<Video[]> {
     const clientId = Deno.env.get("TWITCH_CLIENT_ID");
 
     if (!clientId) throw new Error("TWITCH_CLIENT_ID Env Variable not set.");
@@ -61,7 +65,7 @@ export class TwitchApi {
     });
   }
 
-  public static async fetchVodCredentials(vodId: string) {
+  public async fetchVodCredentials(vodId: string) {
     const clientId = Deno.env.get("TWITCH_GQL_CLIENT_ID");
 
     if (!clientId) {
@@ -97,7 +101,7 @@ export class TwitchApi {
     };
   }
 
-  public static async getVodM3u8(
+  public async getVodM3u8(
     vodId: string,
     { token, sig }: { token: string; sig: string },
   ) {
@@ -110,10 +114,10 @@ export class TwitchApi {
     return m3u8Playlist;
   }
 
-  public static async fetchPlaylist(url: string) {
+  public async fetchPlaylist(url: string) {
     const res = await fetch(url, { method: "GET" });
     const m3u8Playlist = await res.text();
 
-    return M3U8Parser.parse(m3u8Playlist);
+    return this.m3U8Parser.parse(m3u8Playlist);
   }
 }

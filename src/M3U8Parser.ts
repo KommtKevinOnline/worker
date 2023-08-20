@@ -1,8 +1,8 @@
 import * as m3u8Parser from "../deps.ts";
-import { Manifest } from "./interfaces/Manifest.ts";
+import { Manifest } from "./types/Manifest.ts";
 
 export class M3U8Parser {
-  static parse(m3uText: string): Manifest {
+  public parse(m3uText: string): Manifest {
     const parser = new m3u8Parser.Parser();
     parser.push(m3uText);
     parser.end();

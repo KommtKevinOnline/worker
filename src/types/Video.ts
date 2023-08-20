@@ -1,4 +1,4 @@
-export interface Video {
+export type Video = {
   id: string;
   stream_id: string;
   user_id: string;

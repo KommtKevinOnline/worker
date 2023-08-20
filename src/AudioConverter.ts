@@ -1,10 +1,17 @@
-import { ffmpeg } from "../deps.ts";
+import { FfmpegClass, Logger, ProgressBar } from "../deps.ts";
 
 export class AudioConverter {
-  public static async convert(path: string) {
-    const saveName = `.${path.split(".")[1]}.mp3`;
+  constructor(
+    private readonly logger: Logger
+  ) { }
 
-    await ffmpeg({ ffmpegDir: "/usr/bin/ffmpeg", input: path })
+  public async convert(videoPath: string) {
+    const saveName = `.${videoPath.split(".")[1]}.mp3`;
+
+    const ffmpegInstance = await new FfmpegClass({
+      ffmpegDir: '/usr/bin/ffmpeg',
+      input: videoPath,
+    })
       .audioFilters({
         filterName: "silenceremove",
         options: {
@@ -16,7 +23,18 @@ export class AudioConverter {
           stop_threshold: 0,
         },
       })
-      .save(saveName);
+      .save(saveName, true);
+
+    const progressBar = new ProgressBar({
+      title: 'Converting VOD to audio',
+      total: 100,
+    });
+
+    for await (const progress of ffmpegInstance) {
+      progressBar.render(progress.percentage)
+    }
+
+    this.logger.info("Successfully converted vod to audio");
 
     return saveName;
   }

@@ -1,4 +1,4 @@
-export interface Manifest {
+export type Manifest = {
   allowCache: boolean;
   discontinuityStarts: [];
   segments: { duration: number; uri: string; timeline: number }[];
