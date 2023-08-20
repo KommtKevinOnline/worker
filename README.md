@@ -1,11 +1,11 @@
 # KommtKevinOnline.de
 
 ### Usage
-
-Start the project:
-
+1. Copy the .env.example to .env
+2. Put the needed values in
+3. Start the project:
 ```
-deno task start
+docker-compose up
 ```
 
 ### How does it work
