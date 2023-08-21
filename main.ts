@@ -11,6 +11,8 @@ import { WitAi } from "./src/WitAi.ts";
 import { M3U8Parser } from "./src/M3U8Parser.ts";
 import { ChunkDownloader } from "./src/ChunkDownloader.ts";
 import { Logger } from "./deps.ts";
+import { Queue } from "./src/Queue.ts";
+import { Video } from "./src/types/Video.ts";
 
 if (!Deno.env.get("POSTGRES_PASSWORD")) {
   throw new Error("POSTGRES_PASSWORD Env Variable not set.");
@@ -38,47 +40,60 @@ async function pollVods(
   videoDownloader: VideoDownloader,
   audioConverter: AudioConverter,
   transcriber: Transcriber,
-  classifier: Classifier
+  classifier: Classifier,
+  queue: Queue<Video>,
 ) {
   const STREAMER_ID = Deno.env.get('STREAMER_ID')
 
   if (!STREAMER_ID) throw new Error('STREAMER_ID Env Variable not set.')
 
-  const LAST_ID = (await client.queryObject<{ vodid: string }>('SELECT vodid FROM vods ORDER BY vodid DESC LIMIT 1')).rows[0]?.vodid;
+  const processedVideos = (await client.queryObject<{ vodid: string }>('SELECT vodid FROM vods')).rows.map(row => row.vodid)
 
   const videos = await twitch.getVideos(STREAMER_ID)
-  const latestVideo = videos[0];
 
-  if (latestVideo.id === LAST_ID) {
-    logger.info("No new vod found.");
-    return;
-  }
+  queue.add(...videos);
 
-  logger.info(`Found new vod "${latestVideo.id}" from "${new Date(latestVideo.created_at).toLocaleDateString('de-DE')}".`);
+  await queue.process(async (video: Video) => {
 
-  await Deno.mkdir(`./data/${latestVideo.id}`, { recursive: true });
+    if (processedVideos.includes(video.id)) {
+      logger.info(`Vod "${video.id}" already processed. Skipping.`);
+      return;
+    }
 
-  const videoPath = await videoDownloader.download(latestVideo)
+    logger.info(`Found new vod "${video.id}" from "${new Date(video.created_at).toLocaleDateString('de-DE')}".`);
 
-  const audioPath = await audioConverter.convert(videoPath);
+    await Deno.mkdir(`./data/${video.id}`, { recursive: true });
 
-  const audio = await Deno.readFile(audioPath)
+    const videoPath = await videoDownloader.download(video)
 
-  const transcript = await transcriber.transcribe(audio)
+    const audioPath = await audioConverter.convert(videoPath);
 
-  const comesOnline = await classifier.decide(transcript)
+    const audio = await Deno.readFile(audioPath)
 
-  if (comesOnline) {
+    const transcript = await transcriber.transcribe(audio)
+
+    const comesOnline = await classifier.decide(transcript)
+
+    if (comesOnline) {
+      await client.queryArray({
+        args: { date: comesOnline },
+        text: "INSERT INTO upcoming_streams (date) VALUES ($DATE)",
+      });
+    }
+
     await client.queryArray({
-      args: { date: comesOnline },
-      text: "INSERT INTO upcoming_streams (date) VALUES ($DATE)",
+      args: {
+        vodid: video.id,
+        transcript,
+        title: video.title,
+        date: video.created_at,
+        url: video.url,
+        thumbnail: video.thumbnail_url,
+        view_count: video.view_count
+      },
+      text: "INSERT INTO vods (vodId, transcript, title, date, url, thumnbnail, view_count) VALUES ($VODID, $TRANSCRIPT, $TITLE, $DATE, $URL, $THUMBNAIL, $VIEW_COUNT)",
     });
-  }
-
-  await client.queryArray({
-    args: { vodid: latestVideo.id, transcript },
-    text: "INSERT INTO vods (vodId, transcript) VALUES ($VODID, $TRANSCRIPT)",
-  });
+  })
 }
 
 const m3U8Parser = new M3U8Parser()
@@ -88,9 +103,10 @@ const videoDownloader = new VideoDownloader(twitchApi, m3U8Parser, chunkdDownloa
 const audioConverter = new AudioConverter(logger)
 const witAi = new WitAi(logger)
 const regexClassifier = new RegexClassifier()
+const queue = new Queue<Video>(logger)
 
 async function run() {
-  await pollVods(twitchApi, videoDownloader, audioConverter, witAi, regexClassifier);
+  await pollVods(twitchApi, videoDownloader, audioConverter, witAi, regexClassifier, queue);
 }
 
 new Cron("0 0 * * * *", run);

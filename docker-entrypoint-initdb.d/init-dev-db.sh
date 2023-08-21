@@ -17,10 +17,15 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
       "content" text NOT NULL DEFAULT ''::text
   );
 
-  CREATE TABLE "vods" (
-      "transcript" text,
-      "vodid" varchar NOT NULL,
-      PRIMARY KEY ("vodid")
+  CREATE TABLE "public"."vods" (
+    "transcript" text,
+    "vodid" varchar NOT NULL,
+    "title" text DEFAULT ''::text,
+    "date" timestamptz DEFAULT now(),
+    "url" text DEFAULT ''::text,
+    "thumbnail" text DEFAULT ''::text,
+    "view_count" int8 DEFAULT 0,
+    PRIMARY KEY ("vodid")
   );
 
 EOSQL
