@@ -60,7 +60,7 @@ async function pollVods(
       return;
     }
 
-    logger.info(`Found new vod "${video.id}" from "${new Date(video.created_at).toLocaleDateString('de-DE')}".`);
+    logger.info(`Found new vod "${video.id}" from ${new Date(video.created_at).toISOString()}.`);
 
     await Deno.mkdir(`./data/${video.id}`, { recursive: true });
 
@@ -74,13 +74,6 @@ async function pollVods(
 
     const comesOnline = await classifier.decide(transcript)
 
-    if (comesOnline) {
-      await client.queryArray({
-        args: { date: comesOnline },
-        text: "INSERT INTO upcoming_streams (date) VALUES ($DATE)",
-      });
-    }
-
     await client.queryArray({
       args: {
         vodid: video.id,
@@ -89,9 +82,31 @@ async function pollVods(
         date: video.created_at,
         url: video.url,
         thumbnail: video.thumbnail_url,
-        view_count: video.view_count
+        view_count: video.view_count,
+        online_intend: !!comesOnline,
+        online_intend_date: comesOnline
       },
-      text: "INSERT INTO vods (vodId, transcript, title, date, url, thumbnail, view_count) VALUES ($VODID, $TRANSCRIPT, $TITLE, $DATE, $URL, $THUMBNAIL, $VIEW_COUNT)",
+      text: `INSERT INTO vods (
+        vodId,
+        transcript,
+        title,
+        date,
+        url,
+        thumbnail,
+        view_count,
+        online_intend,
+        online_intend_date
+      ) VALUES (
+        $VODID,
+        $TRANSCRIPT,
+        $TITLE,
+        $DATE,
+        $URL,
+        $THUMBNAIL,
+        $VIEW_COUNT,
+        $ONLINE_INTEND,
+        $ONLINE_INTEND_DATE
+      )`,
     });
   })
 }
