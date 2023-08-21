@@ -91,7 +91,7 @@ async function pollVods(
         thumbnail: video.thumbnail_url,
         view_count: video.view_count
       },
-      text: "INSERT INTO vods (vodId, transcript, title, date, url, thumnbnail, view_count) VALUES ($VODID, $TRANSCRIPT, $TITLE, $DATE, $URL, $THUMBNAIL, $VIEW_COUNT)",
+      text: "INSERT INTO vods (vodId, transcript, title, date, url, thumbnail, view_count) VALUES ($VODID, $TRANSCRIPT, $TITLE, $DATE, $URL, $THUMBNAIL, $VIEW_COUNT)",
     });
   })
 }
