@@ -30,8 +30,8 @@ export class VideoDownloader {
     const playlist = await this.twitchApi.fetchPlaylist(bestPlaylist.uri);
     const segments = playlist.segments;
 
-    // I only want to fetch the latest 20 segments
-    const totalSegments = segments.length - 20;
+    // I only want to fetch the latest 20 segments (if there are more than 20)
+    const totalSegments = segments.length <= 20 ? segments.length - 1 : segments.length - 20;
 
     const progress = new ProgressBar({
       title: `Downloading VOD ${video.id}`,
@@ -40,6 +40,7 @@ export class VideoDownloader {
 
     for (let i = totalSegments; i < segments.length; i++) {
       const segment = segments[i];
+
       await this.chunkdDownloader.download(file, `${playlistBaseURL}/${segment.uri}`);
       progress.render(i);
     }

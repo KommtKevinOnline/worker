@@ -8,6 +8,10 @@ export class WitAi implements Transcriber {
     private readonly logger: Logger,
   ) { }
 
+  /**
+   * Mostly copied from the node-wit library
+   * https://github.com/wit-ai/node-wit/blob/main/lib/wit.js#L372
+   */
   private parseResponse(response: string) {
     const chunks = response
       .split("\r\n")
