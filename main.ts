@@ -19,25 +19,12 @@ if (!Deno.env.get("POSTGRES_PASSWORD")) {
   throw new Error("POSTGRES_PASSWORD Env Variable not set.");
 }
 
-const client = new Client({
-  hostname: Deno.env.get("POSTGRES_HOST"),
-  port: 5432,
-  user: Deno.env.get("POSTGRES_USER"),
-  password: Deno.env.get("POSTGRES_PASSWORD") ?? '',
-  database: Deno.env.get("POSTGRES_DATABASE"),
-  tls: {
-    enabled: true
-  },
-  connection: {
-    attempts: 3
-  }
-});
-
 const logger = new Logger()
 
 logger.info("Started. Polling every hour.");
 
 async function pollVods(
+  client: Client,
   twitch: TwitchApi,
   videoDownloader: VideoDownloader,
   audioConverter: AudioConverter,
@@ -132,7 +119,21 @@ const regexClassifier = new RegexClassifier()
 const queue = new Queue<Video>(logger)
 
 async function run() {
-  await pollVods(twitchApi, videoDownloader, audioConverter, transcoder, regexClassifier, queue);
+  const client = new Client({
+    hostname: Deno.env.get("POSTGRES_HOST"),
+    port: 5432,
+    user: Deno.env.get("POSTGRES_USER"),
+    password: Deno.env.get("POSTGRES_PASSWORD") ?? '',
+    database: Deno.env.get("POSTGRES_DATABASE"),
+    tls: {
+      enabled: true
+    },
+    connection: {
+      attempts: 3
+    }
+  });
+
+  await pollVods(client, twitchApi, videoDownloader, audioConverter, transcoder, regexClassifier, queue);
 }
 
 
