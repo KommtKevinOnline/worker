@@ -1,7 +1,7 @@
 import { Classifier } from "./interfaces/Classifier.ts";
 
 export class RegexClassifier implements Classifier {
-  private REGEX = /morgen.*(fünfzehn Uhr|wieder)/gmi;
+  private REGEX = /\b[mM]orgen(?!.*\bnicht\b)(?=.*(fünfzehn Uhr|wieder))/gmi;
 
   /**
    * function is async to satisfy the interface.
