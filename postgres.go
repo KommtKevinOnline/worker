@@ -31,6 +31,10 @@ func getDownloadedVods() ([]string, error) {
 
 	rows, err := db.Query("SELECT vodid FROM vods")
 
+	if err != nil {
+		return vodIds, err
+	}
+
 	for rows.Next() {
 		var vodId string
 
