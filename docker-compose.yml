@@ -18,14 +18,25 @@ services:
       timeout: 60s
       retries: 5
       start_period: 20s
-  web:
+  whisper:
+    image: ghcr.io/kommtkevinonline/whisper:main
+    environment:
+      - API_KEYS=${WHISPER_API_KEY}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+  worker:
     build:
       context: .
       dockerfile: Dockerfile
     user: root
     volumes:
-      - ./:/app
-    command: "deno run -A --watch main.ts"
+      - ./:/usr/src/app
+    command: "air"
     depends_on:
       postgres:
         condition: service_healthy

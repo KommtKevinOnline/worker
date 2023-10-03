@@ -5,4 +5,6 @@
 .env.production.local
 .env.local
 
-data/
+.vscode
+
+tmp

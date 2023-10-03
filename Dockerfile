@@ -1,14 +1,15 @@
-FROM denoland/deno:alpine
+# Example from https://hub.docker.com/_/golang
 
-RUN apk add ffmpeg
+FROM golang:1.21
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-COPY deps.ts .
-RUN deno cache deps.ts
+# Install https://github.com/cosmtrek/air/
+RUN go install github.com/cosmtrek/air@latest
 
-ADD . .
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
 
-RUN deno cache main.ts
+COPY . .
 
-CMD ["run", "--allow-all", "main.ts"]
+CMD ["go", "run", "."]

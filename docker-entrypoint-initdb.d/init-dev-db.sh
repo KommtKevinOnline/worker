@@ -26,7 +26,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     "thumbnail" text DEFAULT ''::text,
     "view_count" int8 DEFAULT 0,
     "online_intend_date" timestamptz,
-    "online_intend" bool DEFAULT false,
+    "duration" text DEFAULT ''::text,
     PRIMARY KEY ("vodid")
   );
 
