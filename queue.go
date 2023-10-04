@@ -19,10 +19,10 @@ func process() {
 
 		var duration time.Duration = video.Duration.AsDuration()
 
-		if (duration < time.Minute * 2) {
+		if (duration < time.Minute * 5) {
 			duration = 0
 		} else {
-			duration = duration - time.Minute * 2
+			duration = duration - time.Minute * 5
 		}
 
 		vod, err := downloadVod(duration, video.URL)
@@ -48,7 +48,7 @@ func process() {
       panic(err)
     }
 
-		persist(string(transcriptionJson), video, upcoming)
+		persist(string(transcriptionJson), video, upcoming, duration)
 		fmt.Printf("Vod \"%s\" processed successfully.\n", video.ID)
 
 		next = queueItem.Next()
