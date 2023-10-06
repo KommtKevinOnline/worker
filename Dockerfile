@@ -12,4 +12,4 @@ RUN go mod download && go mod verify
 
 COPY . .
 
-CMD ["go", "run", "."]
+CMD ["bash", "/usr/src/app/run_prd.sh"]

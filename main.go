@@ -5,11 +5,12 @@ import (
 
 	"github.com/Adeithe/go-twitch/api"
 	"github.com/joho/godotenv"
-	"github.com/robfig/cron"
 	"github.com/samber/lo"
 )
 
-func run() {
+func main() {
+	godotenv.Load()
+	
 	isOnline, err := isStreamerLive()
 
 	if isOnline {
@@ -42,16 +43,4 @@ func run() {
 	} else {
 		panic(err)
 	}
-}
-
-func main() {
-	godotenv.Load()
-
-	c := cron.New()
-	c.AddFunc("0 0 * * * *", run)
-	c.Start()
-
-	run()
-
-	fmt.Scanln()
 }
