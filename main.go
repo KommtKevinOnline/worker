@@ -34,7 +34,7 @@ func run() {
 				return
 			}
 			
-			fmt.Println(fmt.Sprintf("New Vod \"%s\" found.", video.ID))
+			fmt.Printf("New Vod \"%s\" found.\n", video.ID)
 			addToQueue(&video)
 		})
 
@@ -53,5 +53,5 @@ func main() {
 
 	run()
 
-	for true {}
+	fmt.Scanln()
 }
