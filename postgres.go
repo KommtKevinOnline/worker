@@ -52,20 +52,13 @@ func getDownloadedVods() ([]string, error) {
 	return vodIds, nil
 }
 
-func persist(transcript string, vod api.Video, upcoming []Upcoming, duration time.Duration) {
+
+func persist(transcript string, vod api.Video, upcoming []string, duration time.Duration) {
 	db := getConnection()
-
-	var upcomingDates []string
-
-	for _, upcomingStream := range upcoming {
-		if upcomingStream.Date != nil {
-			upcomingDates = append(upcomingDates, upcomingStream.Date.Format(time.RFC3339))
-		}
-	}
 
 	// TODO: Write upcoming streams to its own table together with the vodId in which it was found
 	sqlStatement := `INSERT INTO vods (transcript, vodid, title, date, url, thumbnail, view_count, online_intend_date, duration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
-	_, err := db.Exec(sqlStatement, transcript, vod.ID, vod.Title, vod.PublishedAt, vod.URL, vod.ThumbnailURL, vod.ViewCount, strings.Join(upcomingDates, ","), duration.Seconds())
+	_, err := db.Exec(sqlStatement, transcript, vod.ID, vod.Title, vod.PublishedAt, vod.URL, vod.ThumbnailURL, vod.ViewCount, strings.Join(upcoming, ","), duration.Seconds())
 
 	if err != nil {
 		log.Fatalf("Error executing SQL statement: %v", err)

@@ -9,25 +9,48 @@ import (
 
 	"github.com/Adeithe/go-twitch/api"
 	openai "github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai/jsonschema"
 )
 
 
 type Upcoming struct {
-	Date *time.Time	`json:"date,omitempty"`
+	Dates []string `json:"dates"`
 }
 
-func classify(transcription string, video api.Video) ([]Upcoming, error) {
+func classify(transcription string, video api.Video) (Upcoming, error) {
 	client := openai.NewClient(os.Getenv(("OPENAI_CHATGPT_TOKEN")))
+
+	functionDefinitions := openai.FunctionDefinition{
+  Name: "has_online_intend",
+	Description: "Evaluate the text that had been said by a twitch streamer at the end of his livestream. Try to find out based on that text, if the streamer is going to stream again the following days.",
+  Parameters: jsonschema.Definition{
+    Type: jsonschema.Object,
+		Properties: map[string]jsonschema.Definition{
+			"dates": {
+				Type: jsonschema.Array,
+				Items: &jsonschema.Definition{
+					Type: jsonschema.String,
+				},
+				Description: "The array of dates he plan's to stream again in RFC3339 format.",
+			},
+		},
+	},
+}
 
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: openai.GPT3Dot5Turbo,
+			Model: openai.GPT4,
+			Functions: []openai.FunctionDefinition{functionDefinitions},
 			Messages: []openai.ChatCompletionMessage{
+				{
+					Role:		openai.ChatMessageRoleSystem,
+					Content: "You are an assistant that trys to evaluate if and when a twitch livestreamer will stream again based on a text that had been said during a past livestream. If you are unsure about the time, default to 15 o'clock. If he doesn't say something if he is planning to stream or not, default to an empty array.",
+				},
 				{
 					Role:    openai.ChatMessageRoleUser,
 					Content: fmt.Sprintf(
-				"Evaluate when the streamer called \"Papaplatte\" that has said the following will be livestreaming again (including opcoming streams). The date of the transcription is is %s. Output the result only as json (important: not with any other text) with the following schema: [{ \"date\": \"date in RFC3339 Format\" }]. If he plans multiple streams, add more objects to the array. If he is not planning to stream just output this: [{\"date\": null}]\n text: %s",
+					"The date of the transcription is is %s. text: %s",
 						video.PublishedAt.Format(time.RFC3339),
 						transcription,
 					),
@@ -38,16 +61,34 @@ func classify(transcription string, video api.Video) ([]Upcoming, error) {
 
 	if err != nil {
 		fmt.Printf("ChatCompletion error: %v\n", err)
-		return []Upcoming{}, err
+		return Upcoming{}, err
 	}
 
-	var data []Upcoming
+	f, err := os.Create("chatgpt.json")
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return Upcoming{}, err
+	}
 
-	err = json.Unmarshal([]byte(resp.Choices[0].Message.Content), &data)
+	respJson, err := json.Marshal(resp)
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return Upcoming{}, err
+	}
+
+	f.Write(respJson)
+
+	f.Close()
+
+	var data Upcoming
+
+	err = json.Unmarshal([]byte(resp.Choices[0].Message.FunctionCall.Arguments), &data)
 	if err != nil {
 		fmt.Println("Error:", err)
-		fmt.Println("Response:", resp.Choices[0].Message.Content)
-		return []Upcoming{}, err
+		fmt.Println("Response:", resp.Choices[0].Message.FunctionCall.Arguments)
+		return Upcoming{}, err
 	}
 
 	return data, nil

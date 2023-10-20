@@ -11,8 +11,9 @@ import (
 func main() {
 	godotenv.Load()
 	
-	isOnline, err := isStreamerLive()
+	// isOnline, err := isStreamerLive()
 
+	isOnline := false
 	if isOnline {
 		fmt.Println("Streamer is online; skip")
 	} else if !isOnline {
@@ -41,6 +42,7 @@ func main() {
 
 		process()
 	} else {
-		panic(err)
+		fmt.Printf("blabla")
+		// panic(err)
 	}
 }

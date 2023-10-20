@@ -48,7 +48,7 @@ func process() {
       panic(err)
     }
 
-		persist(string(transcriptionJson), video, upcoming, duration)
+		persist(string(transcriptionJson), video, upcoming.Dates, duration)
 		fmt.Printf("Vod \"%s\" processed successfully.\n", video.ID)
 
 		next = queueItem.Next()
