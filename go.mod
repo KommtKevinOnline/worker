@@ -1,6 +1,6 @@
 module niki2k1.dev/m
 
-go 1.23
+go 1.21
 
 require (
 	github.com/Adeithe/go-twitch v0.2.3
