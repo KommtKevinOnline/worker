@@ -16,7 +16,7 @@ require (
 	github.com/gorilla/websocket v1.5.1 // indirect
 	github.com/grafov/m3u8 v0.12.0 // indirect
 	github.com/hasura/go-graphql-client v0.10.0 // indirect
-	github.com/jybp/twitch-downloader v0.0.0-20230501094316-f5fd907b59a9
+	github.com/jybp/twitch-downloader v0.0.0-20240111184118-d299fbc6fb31
 	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/lib/pq v1.10.9
 	github.com/pkg/errors v0.9.1 // indirect
@@ -31,5 +31,3 @@ require (
 	google.golang.org/protobuf v1.32.0 // indirect
 	nhooyr.io/websocket v1.8.7 // indirect
 )
-
-replace github.com/jybp/twitch-downloader v0.0.0-20230501094316-f5fd907b59a9 => github.com/jybp/twitch-downloader v0.0.0-20240111184118-d299fbc6fb31
