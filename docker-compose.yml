@@ -1,5 +1,3 @@
-version: "3.2"
-
 services:
   postgres:
     image: postgres:latest
@@ -36,7 +34,9 @@ services:
     user: root
     volumes:
       - ./:/usr/src/app
-    command: "air"
+    # command: "air"
+    working_dir: /usr/src/app
+    command: "go run ."
     depends_on:
       postgres:
         condition: service_healthy

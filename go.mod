@@ -8,7 +8,13 @@ require (
 	golang.org/x/oauth2 v0.15.0
 )
 
-require golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc // indirect
+require (
+	github.com/aws/aws-sdk-go v1.38.20 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
+	github.com/u2takey/ffmpeg-go v0.5.0 // indirect
+	github.com/u2takey/go-utils v0.3.1 // indirect
+	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc // indirect
+)
 
 require (
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -23,7 +29,7 @@ require (
 	github.com/rakyll/openai-go v1.0.9
 	github.com/robfig/cron v1.2.0
 	github.com/samber/lo v1.39.0
-	github.com/sashabaranov/go-openai v1.17.10
+	github.com/sashabaranov/go-openai v1.27.1
 	github.com/wit-ai/wit-go/v2 v2.0.2
 	github.com/wmw64/twitchpl v0.5.0 // indirect
 	golang.org/x/net v0.19.0 // indirect

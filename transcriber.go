@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"context"
 	"io"
-	"net/http"
 	"os"
+
+	openai "github.com/sashabaranov/go-openai"
 )
 
 type Segment struct {
@@ -27,40 +27,22 @@ type TranscribeResponse struct {
 	Language string    `json:"language"`
 }
 
-func transcribe(file io.Reader) (TranscribeResponse, error) {
-	apiURL := fmt.Sprintf("%s/transcribe", os.Getenv("WHISPER_BASE_URL"))
+func transcribe(file io.Reader) (openai.AudioResponse, error) {
+	client := openai.NewClient(os.Getenv(("OPENAI_CHATGPT_TOKEN")))
 
-	// Create a new HTTP request
-	req, err := http.NewRequest("POST", apiURL, file)
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("WHISPER_API_KEY")))
+	ctx := context.Background()
 
-	if err != nil {
-		return TranscribeResponse{}, err
+	req := openai.AudioRequest{
+		Model:    openai.Whisper1,
+		Reader:  file,
+		FilePath: "audio.webm",
+		Format: openai.AudioResponseFormatVerboseJSON,
+		TimestampGranularities: []openai.TranscriptionTimestampGranularity{
+			openai.TranscriptionTimestampGranularitySegment,
+		},
 	}
 
-	// Make the HTTP request
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := client.CreateTranscription(ctx, req)
 
-	if err != nil {
-		return TranscribeResponse{}, err
-	}
-
-	defer resp.Body.Close()
-
-	// Read the response body
-	responseBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return TranscribeResponse{}, err
-	}
-
-	var data TranscribeResponse
-
-	err = json.Unmarshal([]byte(responseBody), &data)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return TranscribeResponse{}, err
-	}
-
-	return data, nil
+	return resp, err
 }

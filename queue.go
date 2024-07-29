@@ -31,21 +31,29 @@ func process() {
 			panic(err)
 		}
 
-		transcription, err := transcribe(vod)
+		vodAudio, err := convert(vod)
+
 		if err != nil {
 			panic(err)
 		}
 
-		transcriptionJson, err := json.Marshal(transcription)
-	
-    if err != nil {
-      panic(err)
-    }
+		transcription, err := transcribe(vodAudio)
+		
+		if err != nil {
+			panic(err)
+		}
 
 		upcoming, err := classify(transcription.Text, video)
 
 		if err != nil {
       panic(err)
+    }
+
+		transcriptionJson, err := json.Marshal(transcription)
+
+    if err != nil {
+        fmt.Println(err)
+        return
     }
 
 		persist(string(transcriptionJson), video, upcoming.Dates, duration)
