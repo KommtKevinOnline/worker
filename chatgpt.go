@@ -45,7 +45,7 @@ func classify(transcription string, video api.Video) (Upcoming, error) {
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:		openai.ChatMessageRoleSystem,
-					Content: "You are an assistant that trys to evaluate if and when a twitch livestreamer will stream again based on a text that had been said during a past livestream. If you are unsure about the time, default to 15 o'clock. If he doesn't say something if he is planning to stream or not, default to an empty array.",
+					Content: "You are an assistant that trys to evaluate if and when a twitch livestreamer will stream again based on a text that had been said during a past livestream. If you are unsure about the time, default to 16:30. If he doesn't say something if he is planning to stream or not, default to an empty array.",
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
