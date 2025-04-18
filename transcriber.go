@@ -37,7 +37,7 @@ func transcribe(file io.Reader) (openai.AudioResponse, error) {
 		Reader:   file,
 		FilePath: "audio.webm",
 		Format:   openai.AudioResponseFormatVerboseJSON,
-		Language: "german",
+		Language: "de",
 		TimestampGranularities: []openai.TranscriptionTimestampGranularity{
 			openai.TranscriptionTimestampGranularitySegment,
 		},
