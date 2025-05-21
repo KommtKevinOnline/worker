@@ -1,46 +1,37 @@
 package main
 
 import (
-	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/Adeithe/go-twitch/api"
 	"github.com/joho/godotenv"
-	"github.com/samber/lo"
+	"niki2k1.dev/m/postgres"
+	twitchLib "niki2k1.dev/m/twitch"
+	"niki2k1.dev/m/whatsapp"
 )
 
 func main() {
 	godotenv.Load()
-	
-	isOnline, err := isStreamerLive()
 
-	if err == nil && isOnline {
-		fmt.Println("Streamer is online; skip")
-	} else if !isOnline {
-		fmt.Println("Streamer is offline")
+	database := postgres.GetConnection()
 
-		alreadyDownloaded, err := getDownloadedVods()
+	twitchLib.SetupOauth()
 
-		if err != nil {
-			panic(err)
-		}
+	whatsappClient, err := whatsapp.Register(database)
+	eventsubClient := twitchLib.RegisterEventSub()
 
-		videos, err := getLatestVideos()
-
-		if err != nil {
-			panic(err)
-		}
-
-		lo.ForEach[api.Video](*videos, func(video api.Video, index int) {
-			if lo.Contains(alreadyDownloaded, video.ID) {
-				return
-			}
-			
-			fmt.Printf("New Vod \"%s\" found.\n", video.ID)
-			addToQueue(&video)
-		})
-
-		process()
-	} else {
-		panic(err)
+	if err != nil {
+		println("Error registering whatsapp client: ", err)
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		whatsappClient.Disconnect()
+		eventsubClient.Close()
+		os.Exit(0)
+	}()
+
 }

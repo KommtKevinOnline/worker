@@ -1,4 +1,4 @@
-package main
+package chatgpt
 
 import (
 	"context"
@@ -16,7 +16,7 @@ type Upcoming struct {
 	Dates []string `json:"dates"`
 }
 
-func classify(transcription string, video api.Video) (Upcoming, error) {
+func Classify(transcription string, video api.Video) (Upcoming, error) {
 	client := openai.NewClient(os.Getenv(("OPENAI_CHATGPT_TOKEN")))
 
 	functionDefinitions := openai.FunctionDefinition{

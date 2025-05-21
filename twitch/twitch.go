@@ -1,4 +1,4 @@
-package main
+package twitch
 
 import (
 	"context"
@@ -10,10 +10,10 @@ import (
 )
 
 func getConfig() clientcredentials.Config {
-	return clientcredentials.Config {
+	return clientcredentials.Config{
 		ClientID:     os.Getenv("TWITCH_CLIENT_ID"),
 		ClientSecret: os.Getenv("TWITCH_CLIENT_SECRET"),
-		TokenURL: 	 "https://id.twitch.tv/oauth2/token",
+		TokenURL:     "https://id.twitch.tv/oauth2/token",
 	}
 }
 
@@ -35,7 +35,7 @@ func getBearer() (string, error) {
 	return bearer.AccessToken, err
 }
 
-func isStreamerLive() (bool, error) {
+func IsStreamerLive() (bool, error) {
 	client := getClient()
 
 	call := client.Streams.List().UserID([]string{os.Getenv("TWITCH_STREAMER_ID")}).Type("live").First(1)
@@ -47,11 +47,11 @@ func isStreamerLive() (bool, error) {
 	}
 
 	streams, err := call.Do(context.Background(), api.WithBearerToken(bearer))
-		
+
 	return len(streams.Data) == 1, err
 }
 
-func getLatestVideos() (*[]api.Video, error) {
+func GetLatestVideos() (*[]api.Video, error) {
 	client := getClient()
 
 	bearer, err := getBearer()

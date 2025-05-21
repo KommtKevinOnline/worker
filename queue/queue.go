@@ -1,4 +1,4 @@
-package main
+package queue
 
 import (
 	"container/list"
@@ -7,11 +7,16 @@ import (
 	"time"
 
 	"github.com/Adeithe/go-twitch/api"
+	"niki2k1.dev/m/chatgpt"
+	"niki2k1.dev/m/converter"
+	"niki2k1.dev/m/downloader"
+	"niki2k1.dev/m/postgres"
+	"niki2k1.dev/m/transcriber"
 )
 
 var queue list.List = list.List{}
 
-func process() {
+func Process() {
 	var next *list.Element
 
 	for queueItem := queue.Front(); queueItem != nil; queueItem = next {
@@ -19,51 +24,51 @@ func process() {
 
 		var duration time.Duration = video.Duration.AsDuration()
 
-		if (duration < time.Minute * 5) {
+		if duration < time.Minute*5 {
 			duration = 0
 		} else {
-			duration = duration - time.Minute * 5
+			duration = duration - time.Minute*5
 		}
 
-		vod, err := downloadVod(duration, video.URL)
+		vod, err := downloader.DownloadVod(duration, video.URL)
 
 		if err != nil {
 			panic(err)
 		}
 
-		vodAudio, err := convert(vod)
+		vodAudio, err := converter.Convert(vod)
 
 		if err != nil {
 			panic(err)
 		}
 
-		transcription, err := transcribe(vodAudio)
-		
+		transcription, err := transcriber.Transcribe(vodAudio)
+
 		if err != nil {
 			panic(err)
 		}
 
-		upcoming, err := classify(transcription.Text, video)
+		upcoming, err := chatgpt.Classify(transcription.Text, video)
 
 		if err != nil {
-      panic(err)
-    }
+			panic(err)
+		}
 
 		transcriptionJson, err := json.Marshal(transcription)
 
-    if err != nil {
-        fmt.Println(err)
-        return
-    }
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
-		persist(string(transcriptionJson), video, upcoming.Dates, duration)
+		postgres.Persist(string(transcriptionJson), video, upcoming.Dates, duration)
 		fmt.Printf("Vod \"%s\" processed successfully.\n", video.ID)
 
 		next = queueItem.Next()
-    queue.Remove(queueItem)
+		queue.Remove(queueItem)
 	}
 }
 
-func addToQueue(vod *api.Video) {
+func AddToQueue(vod *api.Video) {
 	queue.PushBack(*vod)
 }

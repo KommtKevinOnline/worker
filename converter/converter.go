@@ -1,4 +1,4 @@
-package main
+package converter
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
-func convert(inputData io.ReadCloser) (*bytes.Buffer, error) {
+func Convert(inputData io.ReadCloser) (*bytes.Buffer, error) {
 	// Read the input data
 	inputDataBytes, err := io.ReadAll(inputData)
 

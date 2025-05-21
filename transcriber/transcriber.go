@@ -1,4 +1,4 @@
-package main
+package transcriber
 
 import (
 	"context"
@@ -27,7 +27,7 @@ type TranscribeResponse struct {
 	Language string    `json:"language"`
 }
 
-func transcribe(file io.Reader) (openai.AudioResponse, error) {
+func Transcribe(file io.Reader) (openai.AudioResponse, error) {
 	client := openai.NewClient(os.Getenv(("OPENAI_CHATGPT_TOKEN")))
 
 	ctx := context.Background()
