@@ -1,22 +1,50 @@
 package whatsapp
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
+	"mime"
 	"os"
+	"text/tabwriter"
 
 	"github.com/mdp/qrterminal/v3"
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types/events"
+	"niki2k1.dev/m/transcriber"
 )
 
-func handleMessage(evt interface{}) {
+func handleMessage(client *whatsmeow.Client, evt interface{}) {
 	switch v := evt.(type) {
 	case *events.Message:
-		if v.Info.Sender.String() == "120363190873003716@newsletter" {
-			fmt.Println(v.Message.GetConversation())
+		channelID := ensureChannelIdIsSet(client)
+		if v.Info.Sender.String() == channelID {
+			// If message contains text
+			if v.Message.GetConversation() != "" {
+				fmt.Println(v.Message.GetConversation())
+			}
+
+			// If message contains voice message
+			if v.Message.AudioMessage != nil {
+				data, err := client.Download(context.Background(), v.Message.AudioMessage)
+				if err != nil {
+					fmt.Println("[WHATSAPP] Error downloading audio message:", err)
+				}
+				exts, _ := mime.ExtensionsByType(v.Message.AudioMessage.GetMimetype())
+				path := fmt.Sprintf("%s%s", v.Info.ID, exts[0])
+				err = os.WriteFile(path, data, 0600)
+				if err != nil {
+					fmt.Println("[WHATSAPP] Error saving audio message:", err)
+				}
+
+				transcript, err := transcriber.Transcribe(bytes.NewReader(data))
+				if err != nil {
+					fmt.Println("[WHATSAPP] Error transcribing audio message:", err)
+				}
+				fmt.Println(transcript)
+			}
 		}
 	}
 }
@@ -33,10 +61,12 @@ func Register(database *sql.DB) (*whatsmeow.Client, error) {
 		return nil, err
 	}
 
-	fmt.Println("[WHATSAPP] Registering client...")
-
 	client := whatsmeow.NewClient(deviceStore, nil)
-	client.AddEventHandler(handleMessage)
+	client.AddEventHandler(func(evt interface{}) {
+		handleMessage(client, evt)
+	})
+
+	fmt.Println("[WHATSAPP] Registered client")
 
 	if client.Store.ID == nil {
 		// No ID stored, new login
@@ -56,17 +86,7 @@ func Register(database *sql.DB) (*whatsmeow.Client, error) {
 				fmt.Println("[WHATSAPP] Login event:", evt.Event)
 
 				if evt.Event == "success" {
-					//print newsletter channels
-					newsletters, err := client.GetSubscribedNewsletters()
-					if err != nil {
-						fmt.Println("[WHATSAPP] Error getting subscribed newsletters:", err)
-					}
-
-					for _, newsletter := range newsletters {
-						fmt.Println("[WHATSAPP] Subscribed newsletter:", newsletter.ThreadMeta.Name, newsletter.ID)
-					}
-
-					fmt.Println("[WHATSAPP] copy a channel id and set it as env variable: WHATSAPP_NEWSLETTER_CHANNEL_ID")
+					ensureChannelIdIsSet(client)
 				}
 			}
 		}
@@ -79,4 +99,35 @@ func Register(database *sql.DB) (*whatsmeow.Client, error) {
 	}
 
 	return client, nil
+}
+
+func ensureChannelIdIsSet(client *whatsmeow.Client) string {
+	channelID := os.Getenv("WHATSAPP_NEWSLETTER_CHANNEL_ID")
+
+	if channelID == "" {
+		fmt.Println("[WHATSAPP] No WHATSAPP_NEWSLETTER_CHANNEL_ID env variable set, choose a channel:")
+
+		listChannels(client)
+
+		os.Exit(0)
+	}
+
+	return channelID
+}
+
+func listChannels(client *whatsmeow.Client) {
+	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
+	fmt.Fprintln(w, "ID\tName")
+
+	channels, err := client.GetSubscribedNewsletters()
+	if err != nil {
+		fmt.Println("[WHATSAPP] Error getting subscribed newsletters:", err)
+		return
+	}
+
+	for _, channel := range channels {
+		fmt.Fprintf(w, "%s\t%s\n", channel.ID, channel.ThreadMeta.Name.Text)
+	}
+
+	w.Flush()
 }
