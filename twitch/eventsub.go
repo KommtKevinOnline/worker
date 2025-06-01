@@ -66,10 +66,20 @@ func RegisterEventSub() *eventsub.Client {
 				"broadcaster_user_id": os.Getenv("TWITCH_STREAMER_ID"),
 			},
 		})
+
 		if err != nil {
-			fmt.Printf("ERROR subscribing: %v\n", err)
-			return
+			if strings.Contains(err.Error(), "401") {
+				RefreshToken()
+
+				// retry subscribing
+				RegisterEventSub()
+			} else {
+				fmt.Printf("ERROR subscribing: %v\n", err)
+				return
+			}
 		}
+
+		fmt.Printf("Subscribed to stream.offline event\n")
 	})
 
 	client.OnEventStreamOffline(func(event eventsub.EventStreamOffline) {
@@ -82,6 +92,51 @@ func RegisterEventSub() *eventsub.Client {
 	}
 
 	return client
+}
+
+func RefreshToken() {
+	_, refreshToken, _, err := postgres.GetTwitchLoginData()
+	if err != nil {
+		log.Printf("Failed to get twitch login data: %v", err)
+	}
+
+	data := url.Values{}
+	data.Set("client_id", os.Getenv("TWITCH_CLIENT_ID"))
+	data.Set("client_secret", os.Getenv("TWITCH_CLIENT_SECRET"))
+	data.Set("refresh_token", refreshToken)
+	data.Set("grant_type", "refresh_token")
+
+	resp, err := http.Post(
+		"https://id.twitch.tv/oauth2/token",
+		"application/x-www-form-urlencoded",
+		strings.NewReader(data.Encode()),
+	)
+
+	if err != nil {
+		log.Printf("Token exchange failed: %v", err)
+	}
+
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		log.Printf("Token exchange error: %s", string(body))
+	}
+
+	var tokenResp struct {
+		AccessToken  string   `json:"access_token"`
+		RefreshToken string   `json:"refresh_token"`
+		ExpiresIn    int      `json:"expires_in"`
+		Scope        []string `json:"scope"`
+		TokenType    string   `json:"token_type"`
+	}
+
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		log.Printf("Failed to parse token response: %v", err)
+	}
+
+	if err := postgres.SaveTwitchLoginData(tokenResp.AccessToken, tokenResp.RefreshToken, tokenResp.ExpiresIn); err != nil {
+		log.Printf("Failed to save login data: %v", err)
+	}
 }
 
 func SetupOauth() {
