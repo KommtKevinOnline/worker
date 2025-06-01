@@ -1,4 +1,4 @@
-package downloader
+package videoDownloader
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package transcriber
+package ai
 
 import (
 	"context"

@@ -2,16 +2,14 @@ package queue
 
 import (
 	"container/list"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/Adeithe/go-twitch/api"
-	"niki2k1.dev/m/chatgpt"
-	"niki2k1.dev/m/converter"
-	"niki2k1.dev/m/downloader"
-	"niki2k1.dev/m/postgres"
-	"niki2k1.dev/m/transcriber"
+	"kommtkevinonline.de/ai"
+	"kommtkevinonline.de/converter"
+	"kommtkevinonline.de/models"
+	videoDownloader "kommtkevinonline.de/video-downloader"
 )
 
 var queue list.List = list.List{}
@@ -30,38 +28,50 @@ func Process() {
 			duration = duration - time.Minute*5
 		}
 
-		vod, err := downloader.DownloadVod(duration, video.URL)
-
-		if err != nil {
-			panic(err)
-		}
-
-		vodAudio, err := converter.Convert(vod)
-
-		if err != nil {
-			panic(err)
-		}
-
-		transcription, err := transcriber.Transcribe(vodAudio)
-
-		if err != nil {
-			panic(err)
-		}
-
-		upcoming, err := chatgpt.Classify(transcription.Text, video)
-
-		if err != nil {
-			panic(err)
-		}
-
-		transcriptionJson, err := json.Marshal(transcription)
+		vod, err := videoDownloader.DownloadVod(duration, video.URL)
 
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		postgres.Persist(string(transcriptionJson), video, upcoming.Dates, duration)
+		vodAudio, err := converter.Convert(vod)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		transcription, err := ai.Transcribe(vodAudio)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		predictions, err := ai.Predict(transcription.Text, video)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		for _, prediction := range predictions {
+			predictionModel := models.Prediction{
+				ClipID: video.ID,
+				Source: "twitch",
+				Date:   prediction.Date,
+				Type:   prediction.EventType,
+				Topic:  prediction.Topic,
+			}
+
+			err = predictionModel.Save()
+
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+
 		fmt.Printf("Vod \"%s\" processed successfully.\n", video.ID)
 
 		next = queueItem.Next()

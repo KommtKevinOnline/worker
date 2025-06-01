@@ -1,7 +1,6 @@
-package postgres
+package database
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -13,16 +12,22 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func GetConnection() *sql.DB {
+var connection *sqlx.DB
+
+func GetConnection() *sqlx.DB {
+	if connection != nil {
+		return connection
+	}
+
 	connectionString := fmt.Sprintf("user=%s dbname=%s password=%s host=%s port=%s sslmode=disable",
 		os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_DATABASE"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_HOST"), os.Getenv("POSTGRES_PORT"))
 
-	db, err := sql.Open("postgres", connectionString)
+	connection, err := sqlx.Connect("postgres", connectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return db
+	return connection
 }
 
 func GetDownloadedVods() ([]string, error) {
@@ -66,7 +71,7 @@ func Persist(transcript string, vod api.Video, upcoming []string, duration time.
 }
 
 func GetLatestVod() (string, time.Time, error) {
-	db := sqlx.NewDb(GetConnection(), "postgres")
+	db := GetConnection()
 
 	sqlStatement := `SELECT vodId, online_intend_date FROM vods ORDER BY date DESC LIMIT 1`
 	row := db.QueryRow(sqlStatement)
@@ -79,29 +84,4 @@ func GetLatestVod() (string, time.Time, error) {
 	}
 
 	return vodId, onlineIntendDate, nil
-}
-
-func SaveTwitchLoginData(accessToken, refreshToken string, expiresIn int) error {
-	db := GetConnection()
-
-	sqlStatement := `INSERT INTO twitch_login_data (access_token, refresh_token, expires_in) VALUES ($1, $2, $3) ON CONFLICT (id) DO UPDATE SET access_token = $1, refresh_token = $2, expires_in = $3`
-	_, err := db.Exec(sqlStatement, accessToken, refreshToken, expiresIn)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func GetTwitchLoginData() (string, string, int, error) {
-	db := sqlx.NewDb(GetConnection(), "postgres")
-	var accessToken, refreshToken string
-	var expiresIn int
-	query := `SELECT access_token, refresh_token, expires_in FROM twitch_login_data ORDER BY id DESC LIMIT 1`
-	row := db.QueryRowx(query)
-	if err := row.Scan(&accessToken, &refreshToken, &expiresIn); err != nil {
-		return "", "", 0, err
-	}
-	return accessToken, refreshToken, expiresIn, nil
 }

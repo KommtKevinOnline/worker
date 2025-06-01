@@ -13,7 +13,7 @@ import (
 	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types/events"
-	"niki2k1.dev/m/transcriber"
+	"kommtkevinonline.de/ai"
 )
 
 func handleMessage(client *whatsmeow.Client, evt interface{}) {
@@ -39,7 +39,7 @@ func handleMessage(client *whatsmeow.Client, evt interface{}) {
 					fmt.Println("[WHATSAPP] Error saving audio message:", err)
 				}
 
-				transcript, err := transcriber.Transcribe(bytes.NewReader(data))
+				transcript, err := ai.Transcribe(bytes.NewReader(data))
 				if err != nil {
 					fmt.Println("[WHATSAPP] Error transcribing audio message:", err)
 				}
