@@ -48,7 +48,7 @@ services:
     restart: unless-stopped
 
   app:
-    image: node:20.9
+    image: node:22
     working_dir: /app
     volumes:
       - ./KRO-website:/app
