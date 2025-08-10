@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -26,7 +27,7 @@ func main() {
 
 	database.RunMigrations(embedMigrations, db.DB)
 
-	twitchLib.SetupOauth()
+	go twitchLib.SetupOauth()
 
 	var whatsappClient *whatsmeow.Client
 	var err error
@@ -40,6 +41,8 @@ func main() {
 
 	eventsubClient := twitchLib.RegisterEventSub(0)
 
+	fmt.Println("Starting server on port 4000")
+
 	app := fiber.New()
 	routes.RegisterRoutes(app)
 
@@ -52,7 +55,9 @@ func main() {
 		if whatsappClient != nil {
 			whatsappClient.Disconnect()
 		}
-		eventsubClient.Close()
+		if eventsubClient != nil {
+			eventsubClient.Close()
+		}
 		app.Shutdown()
 		os.Exit(0)
 	}()

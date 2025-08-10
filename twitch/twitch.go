@@ -70,3 +70,21 @@ func GetLatestVideos() (*[]api.Video, error) {
 
 	return &videos.Data, nil
 }
+
+func GetVideoById(id string) (*api.Video, error) {
+	client := getClient()
+
+	bearer, err := getBearer()
+
+	if err != nil {
+		return nil, err
+	}
+
+	video, err := client.Videos.List().ID([]string{id}).Do(context.Background(), api.WithBearerToken(bearer))
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &video.Data[0], nil
+}

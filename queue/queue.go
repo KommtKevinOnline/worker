@@ -49,18 +49,23 @@ func Process() {
 			return
 		}
 
-		predictions, err := ai.Predict(transcription.Text, video)
+		predictionRes, err := ai.Predict(transcription.Text, video)
 
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		for _, prediction := range predictions {
+		for _, prediction := range predictionRes.Predictions {
+			parsedDate, parseErr := time.Parse(time.RFC3339, prediction.DateTime)
+			if parseErr != nil {
+				fmt.Println(parseErr)
+				continue
+			}
 			predictionModel := models.Prediction{
 				ClipID: video.ID,
 				Source: "twitch",
-				Date:   prediction.Date,
+				Date:   parsedDate,
 				Type:   prediction.EventType,
 				Topic:  prediction.Topic,
 			}

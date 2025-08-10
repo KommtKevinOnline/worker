@@ -53,7 +53,7 @@ func RegisterEventSub(depth int) *eventsub.Client {
 	})
 
 	client.OnWelcome(func(message eventsub.WelcomeMessage) {
-		token, err := models.TwitchToken.Get(models.TwitchToken{})
+		token, err := models.TwitchToken{}.Get()
 		if err != nil {
 			log.Printf("Failed to get twitch login data: %v", err)
 			return
@@ -89,9 +89,11 @@ func RegisterEventSub(depth int) *eventsub.Client {
 		onStreamerOffline()
 	})
 
-	if err := client.Connect(); err != nil {
-		fmt.Printf("Could not connect client: %v\n", err)
-	}
+	go func() {
+		if err := client.Connect(); err != nil {
+			fmt.Printf("Could not connect client: %v\n", err)
+		}
+	}()
 
 	return client
 }

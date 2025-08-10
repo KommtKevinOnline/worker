@@ -14,7 +14,7 @@ import (
 )
 
 func RefreshToken() {
-	token, err := models.TwitchToken.Get(models.TwitchToken{})
+	token, err := models.TwitchToken{}.Get()
 	if err != nil {
 		log.Printf("Failed to get twitch login data: %v", err)
 	}
@@ -49,7 +49,7 @@ func RefreshToken() {
 }
 
 func SetupOauth() {
-	token, err := models.TwitchToken.Get(models.TwitchToken{})
+	token, err := models.TwitchToken{}.Get()
 	if err != nil {
 		log.Printf("Failed to get twitch login data: %v", err)
 	}
