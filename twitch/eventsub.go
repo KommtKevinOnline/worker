@@ -40,7 +40,12 @@ func onStreamerOffline() {
 	queue.Process()
 }
 
-func RegisterEventSub() *eventsub.Client {
+func RegisterEventSub(depth int) *eventsub.Client {
+	if depth > 3 {
+		fmt.Printf("Max depth reached, stopping event sub\n")
+		return nil
+	}
+
 	client := eventsub.NewClient()
 
 	client.OnError(func(err error) {
@@ -69,7 +74,7 @@ func RegisterEventSub() *eventsub.Client {
 				RefreshToken()
 
 				// retry subscribing
-				RegisterEventSub()
+				RegisterEventSub(depth + 1)
 			} else {
 				fmt.Printf("ERROR subscribing: %v\n", err)
 				return

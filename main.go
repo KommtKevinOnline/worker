@@ -38,12 +38,12 @@ func main() {
 		}
 	}
 
-	eventsubClient := twitchLib.RegisterEventSub()
+	eventsubClient := twitchLib.RegisterEventSub(0)
 
 	app := fiber.New()
 	routes.RegisterRoutes(app)
 
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(":4000"))
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
