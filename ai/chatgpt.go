@@ -83,8 +83,6 @@ func Predict(transcription string, video api.Video) (PredictionResponse, error) 
 		return PredictionResponse{}, fmt.Errorf("empty response from ChatCompletion")
 	}
 
-	fmt.Println(resp.Choices[0].Message.Content)
-
 	err = schema.Unmarshal(resp.Choices[0].Message.Content, &result)
 	if err != nil {
 		return PredictionResponse{}, fmt.Errorf("unmarshal schema error: %w", err)
