@@ -46,3 +46,14 @@ services:
     networks:
       - intern
     restart: unless-stopped
+
+  app:
+    build:
+      dockerfile: .prod/Dockerfile.web
+      context: .
+    ports:
+      - 3000:3000
+    env_file:
+      - .env
+    networks:
+      - app
