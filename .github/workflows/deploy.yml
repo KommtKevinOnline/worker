@@ -26,6 +26,9 @@ jobs:
                 repository: Mittelblut9/KRO-website
                 ref: main
                 path: KRO-website
+            - name: Copy env
+              run: |
+                cp .env KRO-website/.env
 
             - name: Stop all docker
               run: docker compose down
