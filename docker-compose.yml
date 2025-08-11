@@ -40,7 +40,7 @@ services:
     working_dir: /usr/src/app
     depends_on:
       postgres:
-        condition: service_healthy
+        condition: service_completed_successfully
     tty: true
     stdin_open: true
     networks:
