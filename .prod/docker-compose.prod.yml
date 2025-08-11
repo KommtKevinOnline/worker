@@ -32,8 +32,8 @@ services:
 
   worker:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../.
+      dockerfile: ../Dockerfile
     user: root
     volumes:
       - ../:/usr/src/app

@@ -1,6 +1,6 @@
 # Example from https://hub.docker.com/_/golang
 
-FROM golang:1.22
+FROM golang:1.24
 
 WORKDIR /usr/src/app
 
