@@ -20,4 +20,4 @@ ENV TZ=Europe/Berlin
 
 RUN ls -la app
 
-CMD ["node", "/app/.output/server/index.mjs"]
+CMD ["node", "/app/server/index.mjs"]
