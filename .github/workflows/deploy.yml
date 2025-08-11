@@ -31,11 +31,13 @@ jobs:
                 cp .env KRO-website/.env
 
             - name: Stop all docker
-              run: docker compose down
+              run: |
+                docker compose down --remove-orphans
 
             - name: Start all docker
               run: |
                 export POSTGRES_USER=${{ secrets.POSTGRES_USER }}
                 export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
                 export POSTGRES_DATABASE=${{ secrets.POSTGRES_DATABASE }}
+                docker compose build
                 docker compose up -d
