@@ -48,12 +48,9 @@ services:
     restart: unless-stopped
 
   app:
-    image: node:22
-    working_dir: /app
-    volumes:
-      - ./KRO-website:/app
-    command: >
-      sh -c "npm install && npm run build && node .output/server/index.mjs"
+    build:
+      dockerfile: .prod/Dockerfile.web
+      context: .
     ports:
       - 3000:3000
     env_file:
