@@ -13,6 +13,7 @@ import (
 )
 
 func getConnection() *sql.DB {
+	log.Printf("Connecting to PostgreSQL database with User:%s and Database:%s", os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_DATABASE"))
 	connectionString := fmt.Sprintf("user=%s dbname=%s password=%s host=%s port=%s sslmode=disable",
 		os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_DATABASE"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_HOST"), os.Getenv("POSTGRES_PORT"))
 
