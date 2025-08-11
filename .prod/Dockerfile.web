@@ -5,7 +5,7 @@ RUN apt update && apt install -y curl python3 make g++ build-essential
 
 FROM base AS build
 
-COPY . /app
+COPY ./KRO-website /app
 WORKDIR /app
 
 RUN pnpm install --frozen-lockfile
