@@ -5,13 +5,13 @@ go 1.21
 require (
 	github.com/Adeithe/go-twitch v0.2.3
 	github.com/joho/godotenv v1.5.1
+	github.com/u2takey/ffmpeg-go v0.5.0
 	golang.org/x/oauth2 v0.15.0
 )
 
 require (
 	github.com/aws/aws-sdk-go v1.38.20 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/u2takey/ffmpeg-go v0.5.0 // indirect
 	github.com/u2takey/go-utils v0.3.1 // indirect
 	golang.org/x/exp v0.0.0-20240103183307-be819d1f06fc // indirect
 )

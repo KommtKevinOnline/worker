@@ -40,7 +40,7 @@ func classify(transcription string, video api.Video) (Upcoming, error) {
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4,
+			Model: openai.GPT4oMini,
 			Functions: []openai.FunctionDefinition{functionDefinitions},
 			Messages: []openai.ChatCompletionMessage{
 				{

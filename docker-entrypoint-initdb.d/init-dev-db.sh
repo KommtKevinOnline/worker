@@ -3,7 +3,7 @@ set -e
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
   CREATE TABLE IF NOT EXISTS "public"."streams" (
-    "date" timestamptz DEFAULT now(),
+    "date" timestamptz DEFAULT now()
   );
 
   CREATE TABLE IF NOT EXISTS "public"."vods" (
@@ -18,5 +18,4 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
     "duration" float4 DEFAULT 0,
     PRIMARY KEY ("vodid")
   );
-
 EOSQL
