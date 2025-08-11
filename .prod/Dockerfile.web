@@ -18,6 +18,6 @@ EXPOSE 3000
 
 ENV TZ=Europe/Berlin
 
-RUN ls -la
+RUN ls -la app
 
-CMD ["node", ".output/server/index.mjs"]
+CMD ["node", "/app/.output/server/index.mjs"]
