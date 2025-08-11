@@ -25,7 +25,7 @@ services:
       retries: 5
       start_period: 20s
     env_file:
-      - .env
+      - ../.env
     networks:
       - app
       - intern
@@ -36,7 +36,7 @@ services:
       dockerfile: Dockerfile
     user: root
     volumes:
-      - ./:/usr/src/app
+      - ../:/usr/src/app
     working_dir: /usr/src/app
     depends_on:
       postgres:
@@ -50,10 +50,10 @@ services:
   app:
     build:
       dockerfile: .prod/Dockerfile.web
-      context: .
+      context: ../.
     ports:
       - 3000:3000
     env_file:
-      - .env
+      - ../.env
     networks:
       - app
