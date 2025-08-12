@@ -12,45 +12,49 @@ import (
 	"github.com/sashabaranov/go-openai/jsonschema"
 )
 
-
 type Upcoming struct {
-	Dates []string `json:"dates"`
+	Dates      []string `json:"dates"`
+	ViltOnline bool     `json:"vilt_online"`
 }
 
 func classify(transcription string, video api.Video) (Upcoming, error) {
-	client := openai.NewClient(os.Getenv(("OPENAI_CHATGPT_TOKEN")))
+	client := openai.NewClient(os.Getenv("OPENAI_CHATGPT_TOKEN"))
 
 	functionDefinitions := openai.FunctionDefinition{
-  Name: "has_online_intend",
-	Description: "Evaluate the text that had been said by a twitch streamer at the end of his livestream. Try to find out based on that text, if the streamer is going to stream again the following days.",
-  Parameters: jsonschema.Definition{
-    Type: jsonschema.Object,
-		Properties: map[string]jsonschema.Definition{
-			"dates": {
-				Type: jsonschema.Array,
-				Items: &jsonschema.Definition{
-					Type: jsonschema.String,
+		Name: "has_online_intend",
+		Description: "Evaluate if the streamer will stream again. Set vilt_online=true if uncertain or no clear data.",
+		Parameters: jsonschema.Definition{
+			Type: jsonschema.Object,
+			Properties: map[string]jsonschema.Definition{
+				"dates": {
+					Type: jsonschema.Array,
+					Items: &jsonschema.Definition{
+						Type: jsonschema.String,
+					},
+					Description: "Array of planned stream dates in RFC3339 format",
 				},
-				Description: "The array of dates he plan's to stream again in RFC3339 format.",
+				"vilt_online": {
+					Type: jsonschema.Boolean,
+					Description: "True if streamer is uncertain or no data about streaming",
+				},
 			},
 		},
-	},
-}
+	}
 
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4oMini,
+			Model:     openai.GPT4oMini,
 			Functions: []openai.FunctionDefinition{functionDefinitions},
 			Messages: []openai.ChatCompletionMessage{
 				{
-					Role:		openai.ChatMessageRoleSystem,
-					Content: "You are an assistant that trys to evaluate if and when a twitch livestreamer will stream again based on a text that had been said during a past livestream. If you are not sure about the time, you can use 16:30 as a default. But do not choose two times. Just pick one time. If he doesn't say whether he plans to stream or not, default to an empty array.",
+					Role:    openai.ChatMessageRoleSystem,
+					Content: "You evaluate if a streamer will stream again. Return vilt_online=true if uncertain or no clear statement. Return empty array only if clearly no plans.",
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
 					Content: fmt.Sprintf(
-					"The date of the transcription is is %s. text: %s",
+						"Transcription from %s: %s",
 						video.PublishedAt.Format(time.RFC3339),
 						transcription,
 					),
@@ -63,36 +67,27 @@ func classify(transcription string, video api.Video) (Upcoming, error) {
 		fmt.Printf("ChatCompletion error: %v\n", err)
 		return Upcoming{}, err
 	}
-	
-	if resp.Choices == nil || len(resp.Choices) == 0 {
+
+	if len(resp.Choices) == 0 {
 		fmt.Println("No choices found")
 		return Upcoming{}, nil
 	}
 
-	f, err := os.Create("chatgpt.json")
-	if err != nil {
-		fmt.Println(err)
-		f.Close()
-		return Upcoming{}, err
+	// Debugging: Save raw response
+	if f, err := os.Create("chatgpt.json"); err == nil {
+		defer f.Close()
+		json.NewEncoder(f).Encode(resp)
 	}
-
-	respJson, err := json.Marshal(resp)
-	if err != nil {
-		fmt.Println(err)
-		f.Close()
-		return Upcoming{}, err
-	}
-
-	f.Write(respJson)
-
-	f.Close()
 
 	var data Upcoming
-
-	err = json.Unmarshal([]byte(resp.Choices[0].Message.FunctionCall.Arguments), &data)
-	if err != nil {
-		fmt.Println("Error:", err)
-		fmt.Println("Response:", resp.Choices[0].Message.FunctionCall.Arguments)
+	if err := json.Unmarshal(
+		[]byte(resp.Choices[0].Message.FunctionCall.Arguments),
+		&data,
+	); err != nil {
+		fmt.Printf("Unmarshal error: %v\nRaw: %s\n", 
+			err,
+			resp.Choices[0].Message.FunctionCall.Arguments,
+		)
 		return Upcoming{}, err
 	}
 
