@@ -51,7 +51,7 @@ func IsStreamerLive() (bool, error) {
 	return len(streams.Data) == 1, err
 }
 
-func GetLatestVideos() (*[]api.Video, error) {
+func GetLatestVideos(limit int) (*[]api.Video, error) {
 	client := getClient()
 
 	bearer, err := getBearer()
@@ -60,7 +60,7 @@ func GetLatestVideos() (*[]api.Video, error) {
 		return nil, err
 	}
 
-	videoCall := client.Videos.List().UserID(os.Getenv("TWITCH_STREAMER_ID")).Type("archive").First(20)
+	videoCall := client.Videos.List().UserID(os.Getenv("TWITCH_STREAMER_ID")).Type("archive").First(limit)
 
 	videos, err := videoCall.Do(context.Background(), api.WithBearerToken(bearer))
 

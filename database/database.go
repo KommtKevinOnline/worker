@@ -85,3 +85,18 @@ func GetLatestVod() (string, time.Time, error) {
 
 	return vodId, onlineIntendDate, nil
 }
+
+func GetLatestPrediction() (string, error) {
+	db := GetConnection()
+
+	sqlStatement := `SELECT clip_id FROM predictions ORDER BY date DESC LIMIT 1`
+	row := db.QueryRow(sqlStatement)
+
+	var clipId string
+
+	if err := row.Scan(&clipId); err != nil {
+		return "", err
+	}
+
+	return clipId, nil
+}

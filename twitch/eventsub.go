@@ -22,7 +22,7 @@ func onStreamerOffline() {
 		panic(err)
 	}
 
-	videos, err := GetLatestVideos()
+	videos, err := GetLatestVideos(20)
 
 	if err != nil {
 		panic(err)

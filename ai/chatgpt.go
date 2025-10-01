@@ -13,7 +13,7 @@ import (
 
 type PredictionStructuredResponse struct {
 	EventType string `json:"event_type" description:"The Type of the Prediction. Possible values are: live, offday"`
-	DateTime  string `json:"date" description:"The datetime of the prediction in RFC3339 (e.g. 2006-01-02T15:04:05Z07:00)"`
+	DateTime  string `json:"datetime" description:"The datetime of the prediction in RFC3339 (e.g. 2006-01-02T15:04:05Z07:00)"`
 	Topic     string `json:"topic" description:"The topic of the prediction. This is a short description of the topic of the next livestream."`
 }
 
@@ -34,7 +34,7 @@ func Predict(transcription string, video api.Video) (PredictionResponse, error) 
 	resp, err := client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4oMini,
+			Model: openai.GPT5Nano,
 			ResponseFormat: &openai.ChatCompletionResponseFormat{
 				Type: openai.ChatCompletionResponseFormatTypeJSONSchema,
 				JSONSchema: &openai.ChatCompletionResponseFormatJSONSchema{
