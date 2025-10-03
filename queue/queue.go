@@ -31,35 +31,35 @@ func Process() {
 		vod, err := videoDownloader.DownloadVod(duration, video.URL)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Error downloading vod: %s", err)
 			return
 		}
 
 		vodAudio, err := converter.Convert(vod)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Error converting vod: %s", err)
 			return
 		}
 
 		transcription, err := ai.Transcribe(vodAudio)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Error transcribing vod: %s", err)
 			return
 		}
 
 		predictionRes, err := ai.Predict(transcription.Text, video)
 
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Error predicting vod: %s", err)
 			return
 		}
 
 		for _, prediction := range predictionRes.Predictions {
 			parsedDate, parseErr := time.Parse(time.RFC3339, prediction.DateTime)
 			if parseErr != nil {
-				fmt.Println(parseErr)
+				fmt.Printf("Error parsing date: %s", parseErr)
 				continue
 			}
 			predictionModel := models.Prediction{
@@ -73,7 +73,7 @@ func Process() {
 			err = predictionModel.Save()
 
 			if err != nil {
-				fmt.Println(err)
+				fmt.Printf("Error saving prediction: %s", err)
 			}
 		}
 
