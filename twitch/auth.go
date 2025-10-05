@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"kommtkevinonline.de/models"
 )
@@ -17,7 +18,17 @@ func RefreshToken() {
 	token, err := models.TwitchToken{}.Get()
 	if err != nil {
 		log.Printf("Failed to get twitch login data: %v", err)
+		return
 	}
+
+	// Check if the token is still valid
+	expiryTime := token.CreatedAt.Add(time.Duration(token.ExpiresIn) * time.Second)
+	if time.Now().Before(expiryTime) {
+		fmt.Println("Token is still valid, no refresh needed")
+		return
+	}
+
+	fmt.Println("Token expired, refreshing...")
 
 	data := url.Values{}
 	data.Set("client_id", os.Getenv("TWITCH_CLIENT_ID"))
@@ -33,19 +44,23 @@ func RefreshToken() {
 
 	if err != nil {
 		log.Printf("Token exchange failed: %v", err)
+		return
 	}
 
 	defer resp.Body.Close()
 	body, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
 		log.Printf("Token exchange error: %s", string(body))
+		return
 	}
 
 	if err := json.Unmarshal(body, &token); err != nil {
 		log.Printf("Failed to parse token response: %v", err)
+		return
 	}
 
 	token.Save()
+	fmt.Println("Token refreshed successfully")
 }
 
 func SetupOauth() {

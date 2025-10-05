@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"log"
-	"strings"
 
 	"github.com/Adeithe/go-twitch/api"
 	eventsub "github.com/joeyak/go-twitch-eventsub/v3"
@@ -40,11 +39,9 @@ func onStreamerOffline() {
 	queue.Process()
 }
 
-func RegisterEventSub(depth int) *eventsub.Client {
-	if depth > 3 {
-		fmt.Printf("Max depth reached, stopping event sub\n")
-		return nil
-	}
+func RegisterEventSub() *eventsub.Client {
+	// Ensure we have a valid token before connecting
+	RefreshToken()
 
 	client := eventsub.NewClient()
 
@@ -70,15 +67,8 @@ func RegisterEventSub(depth int) *eventsub.Client {
 		})
 
 		if err != nil {
-			if strings.Contains(err.Error(), "401") {
-				RefreshToken()
-
-				// retry subscribing
-				RegisterEventSub(depth + 1)
-			} else {
-				fmt.Printf("ERROR subscribing: %v\n", err)
-				return
-			}
+			fmt.Printf("ERROR subscribing: %v\n", err)
+			return
 		}
 
 		fmt.Printf("Subscribed to stream.offline event\n")

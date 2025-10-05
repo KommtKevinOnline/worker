@@ -39,14 +39,14 @@ func main() {
 		}
 	}
 
-	eventsubClient := twitchLib.RegisterEventSub(0)
+	eventsubClient := twitchLib.RegisterEventSub()
 
 	fmt.Println("Starting server on port 4000")
 
 	app := fiber.New()
 	routes.RegisterRoutes(app)
 
-	log.Fatal(app.Listen(":4000"))
+	log.Fatal(app.Listen(":4090"))
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
