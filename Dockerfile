@@ -11,4 +11,6 @@ RUN go mod download && go mod verify
 
 COPY . .
 
+EXPOSE 4090
+
 CMD ["go", "run", "."]

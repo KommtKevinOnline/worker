@@ -41,7 +41,7 @@ func main() {
 
 	eventsubClient := twitchLib.RegisterEventSub()
 
-	fmt.Println("Starting server on port 4000")
+	fmt.Println("Starting server on port 4090")
 
 	app := fiber.New()
 	routes.RegisterRoutes(app)
