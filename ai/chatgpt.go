@@ -21,7 +21,7 @@ type PredictionResponse struct {
 	Predictions []PredictionStructuredResponse `json:"predictions" description:"The predictions for the next livestream."`
 }
 
-func Predict(transcription string, video api.Video) (PredictionResponse, error) {
+func Predict(transcription string, video api.Video, loc *time.Location) (PredictionResponse, error) {
 	client := openai.NewClient(os.Getenv(("OPENAI_CHATGPT_TOKEN")))
 
 	var result PredictionResponse
@@ -61,13 +61,14 @@ func Predict(transcription string, video api.Video) (PredictionResponse, error) 
 						- offday: The streamer will definetly not stream again at the specified date.
 
 						You must include the time in the date. If the streamer did not specifically announced a time, default to %s.
-						`, os.Getenv("DEFAULT_STREAM_TIME")),
+						All returned datetimes must use the timezone %s.
+						`, os.Getenv("DEFAULT_STREAM_TIME"), loc.String()),
 				},
 				{
 					Role: openai.ChatMessageRoleUser,
 					Content: fmt.Sprintf(
 						"Please evaluate the following inputs and return the predictions. The date of the transcription is is %s. text: %s",
-						video.PublishedAt.Format(time.RFC3339),
+						video.PublishedAt.In(loc).Format(time.RFC3339),
 						transcription,
 					),
 				},

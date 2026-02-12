@@ -18,6 +18,11 @@ import (
 var queue list.List = list.List{}
 
 func Process() {
+	loc, err := time.LoadLocation(os.Getenv("TZ"))
+	if err != nil {
+		loc, _ = time.LoadLocation("Europe/Berlin")
+	}
+
 	var next *list.Element
 
 	for queueItem := queue.Front(); queueItem != nil; queueItem = next {
@@ -52,7 +57,7 @@ func Process() {
 			return
 		}
 
-		predictionRes, err := ai.Predict(transcription.Text, video)
+		predictionRes, err := ai.Predict(transcription.Text, video, loc)
 
 		if err != nil {
 			fmt.Printf("Error predicting vod: %s", err)
@@ -80,7 +85,7 @@ func Process() {
 			}
 		}
 
-		fillOffdayGaps(video, predictionRes.Predictions)
+		fillOffdayGaps(video, predictionRes.Predictions, loc)
 
 		fmt.Printf("Vod \"%s\" processed successfully.\n", video.ID)
 
@@ -95,8 +100,7 @@ func AddToQueue(vod *api.Video) {
 
 // fillOffdayGaps inserts offday predictions for each calendar day between the
 // VOD's published date and the earliest "live" prediction that has no prediction yet.
-func fillOffdayGaps(video api.Video, predictions []ai.PredictionStructuredResponse) {
-	loc := video.PublishedAt.Location()
+func fillOffdayGaps(video api.Video, predictions []ai.PredictionStructuredResponse, loc *time.Location) {
 
 	// Find the earliest "live" prediction date.
 	var earliestLive *time.Time
