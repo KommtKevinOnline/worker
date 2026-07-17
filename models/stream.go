@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"kommtkevinonline.de/database"
@@ -48,4 +49,36 @@ func MarkLatestStreamEnded(endedAt time.Time) error {
 	)
 
 	return err
+}
+
+// MedianStreamStart returns the median start time ("HH:MM", Europe/Berlin) of
+// the streamer's recent streams, preferring exact starts from the streams
+// table and falling back to VOD publish dates. Returns empty when there is
+// not enough data.
+func MedianStreamStart() (string, error) {
+	db := database.GetConnection()
+
+	var medianMinutes *float64
+	err := db.Get(&medianMinutes, `
+		WITH starts AS (
+			SELECT started_at AS ts FROM streams
+			UNION ALL
+			SELECT date FROM vods WHERE date IS NOT NULL
+			ORDER BY ts DESC
+			LIMIT 30
+		)
+		SELECT percentile_cont(0.5) WITHIN GROUP (
+			ORDER BY date_part('hour', ts AT TIME ZONE 'Europe/Berlin') * 60
+				+ date_part('minute', ts AT TIME ZONE 'Europe/Berlin')
+		)
+		FROM starts`,
+	)
+
+	if err != nil || medianMinutes == nil {
+		return "", err
+	}
+
+	total := int(*medianMinutes)
+
+	return fmt.Sprintf("%02d:%02d", total/60%24, total%60), nil
 }

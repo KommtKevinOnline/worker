@@ -42,7 +42,7 @@ Examples (assume today is Tuesday 2026-07-14):
 
 `)
 
-	fmt.Fprintf(&b, "Timezone: %s. Default stream time when none is announced: %s.\n", loc.String(), defaultStreamTime())
+	fmt.Fprintf(&b, "Timezone: %s. Default stream time when none is announced: %s (median of his recent actual starts).\n", loc.String(), input.defaultTime())
 	fmt.Fprintf(&b, "Reference date of the input: %s.\n\n", input.ReferenceTime.In(loc).Format("Monday, 2006-01-02 15:04"))
 
 	b.WriteString("Currently stored predictions:\n")

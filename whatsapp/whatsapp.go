@@ -15,6 +15,7 @@ import (
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types/events"
 	"kommtkevinonline.de/ai"
+	"kommtkevinonline.de/models"
 )
 
 func handleMessage(client *whatsmeow.Client, evt interface{}) {
@@ -63,11 +64,17 @@ func predict(text string, messageID string, sentAt time.Time) {
 		loc, _ = time.LoadLocation("Europe/Berlin")
 	}
 
+	medianStart, err := models.MedianStreamStart()
+	if err != nil {
+		log.Printf("[WHATSAPP] Could not compute median stream start: %v", err)
+	}
+
 	input := ai.Input{
-		Text:          text,
-		Source:        "whatsapp",
-		ClipID:        messageID,
-		ReferenceTime: sentAt,
+		Text:              text,
+		Source:            "whatsapp",
+		ClipID:            messageID,
+		ReferenceTime:     sentAt,
+		DefaultStreamTime: medianStart,
 	}
 
 	outcome, err := ai.RunPrediction(context.Background(), ai.NewOpenAIClient(), ai.NewDBStore(), input, loc)

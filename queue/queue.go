@@ -129,6 +129,11 @@ func processVideo(video api.Video, loc *time.Location) error {
 
 	transcription = ai.CleanTranscription(transcription)
 
+	medianStart, err := models.MedianStreamStart()
+	if err != nil {
+		log.Printf("queue: could not compute median stream start: %v", err)
+	}
+
 	input := ai.Input{
 		Text:              annotateTranscript(transcription),
 		Source:            "twitch",
@@ -136,6 +141,7 @@ func processVideo(video api.Video, loc *time.Location) error {
 		ReferenceTime:     video.PublishedAt,
 		TailOffsetSeconds: startOffset.Seconds(),
 		HasSegments:       len(transcription.Segments) > 0,
+		DefaultStreamTime: medianStart,
 	}
 
 	outcome, err := ai.RunPrediction(context.Background(), ai.NewOpenAIClient(), ai.NewDBStore(), input, loc)

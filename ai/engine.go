@@ -45,6 +45,17 @@ type Input struct {
 	// Used to convert segment-relative quote timestamps to absolute ones.
 	TailOffsetSeconds float64
 	HasSegments       bool
+	// "HH:MM" to assume when no time is announced; usually the median of
+	// recent actual stream starts. Falls back to DEFAULT_STREAM_TIME.
+	DefaultStreamTime string
+}
+
+func (input Input) defaultTime() string {
+	if input.DefaultStreamTime != "" {
+		return input.DefaultStreamTime
+	}
+
+	return defaultStreamTime()
 }
 
 type Outcome struct {
@@ -355,7 +366,7 @@ func executeUpsert(store Store, input Input, loc *time.Location, args upsertArgs
 
 	timePart := args.Time
 	if timePart == "" {
-		timePart = defaultStreamTime()
+		timePart = input.defaultTime()
 	}
 
 	date, err := time.ParseInLocation("2006-01-02 15:04", args.Day+" "+timePart, loc)
