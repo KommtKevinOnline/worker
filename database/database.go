@@ -22,10 +22,16 @@ func GetConnection() *sqlx.DB {
 	connectionString := fmt.Sprintf("user=%s dbname=%s password=%s host=%s port=%s sslmode=disable",
 		os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_DATABASE"), os.Getenv("POSTGRES_PASSWORD"), os.Getenv("POSTGRES_HOST"), os.Getenv("POSTGRES_PORT"))
 
-	connection, err := sqlx.Connect("postgres", connectionString)
+	conn, err := sqlx.Connect("postgres", connectionString)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	conn.SetMaxOpenConns(10)
+	conn.SetMaxIdleConns(5)
+	conn.SetConnMaxLifetime(30 * time.Minute)
+
+	connection = conn
 
 	return connection
 }
@@ -40,6 +46,7 @@ func GetDownloadedVods() ([]string, error) {
 	if err != nil {
 		return vodIds, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var vodId string
@@ -58,45 +65,22 @@ func GetDownloadedVods() ([]string, error) {
 	return vodIds, nil
 }
 
-func Persist(transcript string, vod api.Video, upcoming []string, duration time.Duration) {
+func Persist(transcript string, vod api.Video, upcoming []string, duration time.Duration) error {
 	db := GetConnection()
 
-	// TODO: Write upcoming streams to its own table together with the vodId in which it was found
-	sqlStatement := `INSERT INTO vods (transcript, vodid, title, date, url, thumbnail, view_count, online_intend_date, duration) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	sqlStatement := `
+		INSERT INTO vods (transcript, vodid, title, date, url, thumbnail, view_count, online_intend_date, duration)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		ON CONFLICT (vodid) DO UPDATE SET
+			transcript = EXCLUDED.transcript,
+			title = EXCLUDED.title,
+			date = EXCLUDED.date,
+			url = EXCLUDED.url,
+			thumbnail = EXCLUDED.thumbnail,
+			view_count = EXCLUDED.view_count,
+			online_intend_date = EXCLUDED.online_intend_date,
+			duration = EXCLUDED.duration`
 	_, err := db.Exec(sqlStatement, transcript, vod.ID, vod.Title, vod.PublishedAt, vod.URL, vod.ThumbnailURL, vod.ViewCount, strings.Join(upcoming, ","), duration.Seconds())
 
-	if err != nil {
-		log.Fatalf("Error executing SQL statement: %v", err)
-	}
-}
-
-func GetLatestVod() (string, time.Time, error) {
-	db := GetConnection()
-
-	sqlStatement := `SELECT vodId, online_intend_date FROM vods ORDER BY date DESC LIMIT 1`
-	row := db.QueryRow(sqlStatement)
-
-	var vodId string
-	var onlineIntendDate time.Time
-
-	if err := row.Scan(&vodId, &onlineIntendDate); err != nil {
-		return "", time.Time{}, err
-	}
-
-	return vodId, onlineIntendDate, nil
-}
-
-func GetLatestPrediction() (string, error) {
-	db := GetConnection()
-
-	sqlStatement := `SELECT clip_id FROM predictions ORDER BY date DESC LIMIT 1`
-	row := db.QueryRow(sqlStatement)
-
-	var clipId string
-
-	if err := row.Scan(&clipId); err != nil {
-		return "", err
-	}
-
-	return clipId, nil
+	return err
 }

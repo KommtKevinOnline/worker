@@ -43,7 +43,30 @@ func NewEventSubManager() *EventSubManager {
 	}
 }
 
+func onStreamerOnline(event eventsub.EventStreamOnline) {
+	stream := models.Stream{
+		ID:        event.Id,
+		StartedAt: event.StartedAt,
+	}
+
+	// Title and category are not part of the event payload; best effort only
+	if current, err := GetCurrentStream(); err != nil {
+		log.Printf("Error fetching current stream info: %v", err)
+	} else if current != nil {
+		stream.Title = current.Title
+		stream.Category = current.GameName
+	}
+
+	if err := stream.Save(); err != nil {
+		log.Printf("Error saving stream start: %v", err)
+	}
+}
+
 func onStreamerOffline() {
+	if err := models.MarkLatestStreamEnded(time.Now()); err != nil {
+		log.Printf("Error marking stream as ended: %v", err)
+	}
+
 	alreadyDownloaded, err := database.GetDownloadedVods()
 
 	if err != nil {
@@ -80,21 +103,24 @@ func (m *EventSubManager) subscribeToEvents(sessionID string) error {
 		return fmt.Errorf("failed to get twitch token: %w", err)
 	}
 
-	_, err = eventsub.SubscribeEvent(eventsub.SubscribeRequest{
-		SessionID:   sessionID,
-		ClientID:    os.Getenv("TWITCH_CLIENT_ID"),
-		AccessToken: token.AccessToken,
-		Event:       eventsub.SubStreamOffline,
-		Condition: map[string]string{
-			"broadcaster_user_id": os.Getenv("TWITCH_STREAMER_ID"),
-		},
-	})
+	for _, eventType := range []eventsub.EventSubscription{eventsub.SubStreamOffline, eventsub.SubStreamOnline} {
+		_, err = eventsub.SubscribeEvent(eventsub.SubscribeRequest{
+			SessionID:   sessionID,
+			ClientID:    os.Getenv("TWITCH_CLIENT_ID"),
+			AccessToken: token.AccessToken,
+			Event:       eventType,
+			Condition: map[string]string{
+				"broadcaster_user_id": os.Getenv("TWITCH_STREAMER_ID"),
+			},
+		})
 
-	if err != nil {
-		return fmt.Errorf("failed to subscribe to stream.offline: %w", err)
+		if err != nil {
+			return fmt.Errorf("failed to subscribe to %s: %w", eventType, err)
+		}
+
+		log.Printf("Successfully subscribed to %s event", eventType)
 	}
 
-	log.Printf("Successfully subscribed to stream.offline event")
 	return nil
 }
 
@@ -179,6 +205,13 @@ func (m *EventSubManager) connect() {
 		// Close current connection and reconnect
 		// This will create a new session with Twitch
 		go m.reconnect()
+	})
+
+	// Handle stream online event - record the actual start for accuracy stats
+	m.client.OnEventStreamOnline(func(event eventsub.EventStreamOnline) {
+		log.Printf("Received stream.online event: broadcaster=%s stream=%s", event.BroadcasterUserName, event.Id)
+		m.updateLastMessage()
+		onStreamerOnline(event)
 	})
 
 	// Handle stream offline event

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 
@@ -53,8 +52,7 @@ func Convert(inputData io.ReadCloser) (*bytes.Buffer, error) {
 	inputDataBytes, err := io.ReadAll(inputData)
 
 	if err != nil {
-		log.Fatalf("failed to read input data: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to read input data: %w", err)
 	}
 
 	// Create a buffer to hold the input and output data
@@ -63,7 +61,7 @@ func Convert(inputData io.ReadCloser) (*bytes.Buffer, error) {
 
 	fs, err := os.Create("output.ogg")
 	if err != nil {
-		log.Fatalf("failed to create output file: %v", err)
+		return nil, fmt.Errorf("failed to create output file: %w", err)
 	}
 	defer fs.Close()
 
@@ -81,8 +79,7 @@ func Convert(inputData io.ReadCloser) (*bytes.Buffer, error) {
 		Run()
 
 	if err != nil {
-		log.Fatalf("%v", err)
-		log.Fatalf("ffmpeg conversion failed: %v", err)
+		return nil, fmt.Errorf("ffmpeg conversion failed: %w", err)
 	}
 
 	// Retrieve the output data as WAV

@@ -2,6 +2,7 @@ package twitch
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/Adeithe/go-twitch"
@@ -65,7 +66,7 @@ func GetLatestVideos(limit int) (*[]api.Video, error) {
 	videos, err := videoCall.Do(context.Background(), api.WithBearerToken(bearer))
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &videos.Data, nil
@@ -86,5 +87,31 @@ func GetVideoById(id string) (*api.Video, error) {
 		return nil, err
 	}
 
+	if len(video.Data) == 0 {
+		return nil, fmt.Errorf("no video found for id %s", id)
+	}
+
 	return &video.Data[0], nil
+}
+
+func GetCurrentStream() (*api.Stream, error) {
+	client := getClient()
+
+	bearer, err := getBearer()
+
+	if err != nil {
+		return nil, err
+	}
+
+	streams, err := client.Streams.List().UserID([]string{os.Getenv("TWITCH_STREAMER_ID")}).First(1).Do(context.Background(), api.WithBearerToken(bearer))
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(streams.Data) == 0 {
+		return nil, nil
+	}
+
+	return &streams.Data[0], nil
 }

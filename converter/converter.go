@@ -2,26 +2,23 @@ package converter
 
 import (
 	"bytes"
+	"fmt"
 	"io"
-	"log"
 
 	ffmpeg "github.com/u2takey/ffmpeg-go"
 )
 
 func Convert(inputData io.ReadCloser) (*bytes.Buffer, error) {
-	// Read the input data
-	inputDataBytes, err := io.ReadAll(inputData)
+	defer inputData.Close()
 
+	inputDataBytes, err := io.ReadAll(inputData)
 	if err != nil {
-		log.Fatalf("failed to read input data: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to read input data: %w", err)
 	}
 
-	// Create a buffer to hold the input and output data
 	inputBuffer := bytes.NewReader(inputDataBytes)
 	outputBuffer := &bytes.Buffer{}
 
-	// Set up the FFmpeg process
 	err = ffmpeg.Input("pipe:0").
 		Output("pipe:1", ffmpeg.KwArgs{"f": "webm"}).
 		WithInput(inputBuffer).
@@ -29,10 +26,8 @@ func Convert(inputData io.ReadCloser) (*bytes.Buffer, error) {
 		Run()
 
 	if err != nil {
-		log.Fatalf("%v", err)
-		log.Fatalf("ffmpeg conversion failed: %v", err)
+		return nil, fmt.Errorf("ffmpeg conversion failed: %w", err)
 	}
 
-	// Retrieve the output data as WAV
 	return outputBuffer, nil
 }

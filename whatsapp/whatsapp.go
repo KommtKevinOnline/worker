@@ -5,9 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"mime"
+	"log"
 	"os"
 	"text/tabwriter"
+	"time"
 
 	"github.com/mdp/qrterminal/v3"
 	"go.mau.fi/whatsmeow"
@@ -20,33 +21,62 @@ func handleMessage(client *whatsmeow.Client, evt interface{}) {
 	switch v := evt.(type) {
 	case *events.Message:
 		channelID := ensureChannelIdIsSet(client)
-		if v.Info.Sender.String() == channelID {
-			// If message contains text
-			if v.Message.GetConversation() != "" {
-				fmt.Println(v.Message.GetConversation())
-			}
-
-			// If message contains voice message
-			if v.Message.AudioMessage != nil {
-				data, err := client.Download(context.Background(), v.Message.AudioMessage)
-				if err != nil {
-					fmt.Println("[WHATSAPP] Error downloading audio message:", err)
-				}
-				exts, _ := mime.ExtensionsByType(v.Message.AudioMessage.GetMimetype())
-				path := fmt.Sprintf("%s%s", v.Info.ID, exts[0])
-				err = os.WriteFile(path, data, 0600)
-				if err != nil {
-					fmt.Println("[WHATSAPP] Error saving audio message:", err)
-				}
-
-				transcript, err := ai.Transcribe(bytes.NewReader(data))
-				if err != nil {
-					fmt.Println("[WHATSAPP] Error transcribing audio message:", err)
-				}
-				fmt.Println(transcript)
-			}
+		if v.Info.Sender.String() != channelID {
+			return
 		}
+
+		var text string
+
+		if conversation := v.Message.GetConversation(); conversation != "" {
+			text = conversation
+		} else if extended := v.Message.GetExtendedTextMessage().GetText(); extended != "" {
+			text = extended
+		} else if v.Message.AudioMessage != nil {
+			data, err := client.Download(context.Background(), v.Message.AudioMessage)
+			if err != nil {
+				log.Printf("[WHATSAPP] Error downloading audio message: %v", err)
+				return
+			}
+
+			transcript, err := ai.Transcribe(bytes.NewReader(data))
+			if err != nil {
+				log.Printf("[WHATSAPP] Error transcribing audio message: %v", err)
+				return
+			}
+
+			text = transcript.Text
+		}
+
+		if text == "" {
+			return
+		}
+
+		log.Printf("[WHATSAPP] Channel message: %s", text)
+
+		predict(text, v.Info.ID, v.Info.Timestamp)
 	}
+}
+
+func predict(text string, messageID string, sentAt time.Time) {
+	loc, err := time.LoadLocation(os.Getenv("TZ"))
+	if err != nil {
+		loc, _ = time.LoadLocation("Europe/Berlin")
+	}
+
+	input := ai.Input{
+		Text:          text,
+		Source:        "whatsapp",
+		ClipID:        messageID,
+		ReferenceTime: sentAt,
+	}
+
+	outcome, err := ai.RunPrediction(context.Background(), ai.NewOpenAIClient(), ai.NewDBStore(), input, loc)
+	if err != nil {
+		log.Printf("[WHATSAPP] Error predicting from message: %v", err)
+		return
+	}
+
+	log.Printf("[WHATSAPP] Message (model %s) saved %d predictions, cleared %d days", outcome.ModelUsed, len(outcome.Saved), len(outcome.ClearedDays))
 }
 
 func Register(database *sql.DB) (*whatsmeow.Client, error) {
@@ -73,13 +103,10 @@ func Register(database *sql.DB) (*whatsmeow.Client, error) {
 		qrChan, _ := client.GetQRChannel(context.Background())
 		err = client.Connect()
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		for evt := range qrChan {
 			if evt.Event == "code" {
-				// Render the QR code here
-				// e.g. qrterminal.GenerateHalfBlock(evt.Code, qrterminal.L, os.Stdout)
-				// or just manually `echo 2@... | qrencode -t ansiutf8` in a terminal
 				fmt.Println("[WHATSAPP] Scan the QR code to login")
 				qrterminal.GenerateHalfBlock(evt.Code, qrterminal.L, os.Stdout)
 			} else {
@@ -94,7 +121,7 @@ func Register(database *sql.DB) (*whatsmeow.Client, error) {
 		// Already logged in, just connect
 		err = client.Connect()
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 	}
 
