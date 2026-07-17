@@ -1,4 +1,4 @@
-package main
+package videoDownloader
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/samber/lo"
 )
 
-func downloadVod(start time.Duration, url string) (io.ReadCloser, error) {
+func DownloadVod(start time.Duration, url string) (io.ReadCloser, error) {
 	qualities, err := twitchdl.Qualities(context.Background(), &http.Client{}, os.Getenv("TWITCH_GQL_CLIENT_ID"), url)
 
 	if err != nil {
@@ -20,7 +20,7 @@ func downloadVod(start time.Duration, url string) (io.ReadCloser, error) {
 
 	var resolution string
 
-	if (lo.Contains[string](qualities, "Audio Only")) {
+	if lo.Contains(qualities, "Audio Only") {
 		resolution = "Audio Only"
 	} else {
 		resolution = qualities[0]

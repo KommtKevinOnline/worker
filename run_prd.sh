@@ -1,1 +1,0 @@
-while true; do go run /usr/src/app ; sleep 3600; done
