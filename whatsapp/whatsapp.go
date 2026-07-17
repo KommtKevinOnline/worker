@@ -146,7 +146,7 @@ func listChannels(client *whatsmeow.Client) {
 	w := tabwriter.NewWriter(os.Stdout, 1, 1, 1, ' ', 0)
 	fmt.Fprintln(w, "ID\tName")
 
-	channels, err := client.GetSubscribedNewsletters()
+	channels, err := client.GetSubscribedNewsletters(context.Background())
 	if err != nil {
 		fmt.Println("[WHATSAPP] Error getting subscribed newsletters:", err)
 		return
