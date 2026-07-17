@@ -44,7 +44,7 @@ func handleMessage(client *whatsmeow.Client, evt interface{}) {
 				return
 			}
 
-			text = transcript.Text
+			text = ai.CleanTranscription(transcript).Text
 		}
 
 		if text == "" {

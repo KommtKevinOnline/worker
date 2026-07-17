@@ -127,6 +127,8 @@ func processVideo(video api.Video, loc *time.Location) error {
 		return err
 	}
 
+	transcription = ai.CleanTranscription(transcription)
+
 	input := ai.Input{
 		Text:              annotateTranscript(transcription),
 		Source:            "twitch",
