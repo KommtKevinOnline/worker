@@ -69,8 +69,17 @@ func UpcomingPredictions(from time.Time, limit int) ([]Prediction, error) {
 	db := database.GetConnection()
 
 	predictions := []Prediction{}
+	// Explicit columns: the table still carries a legacy "type" column that has
+	// no struct destination, so SELECT * breaks sqlx scanning. day::text keeps
+	// the YYYY-MM-DD form (lib/pq would otherwise render the date column as a
+	// full timestamp), and the COALESCEs guard against NULLs in pre-migration
+	// rows.
 	err := db.Select(&predictions, `
-		SELECT * FROM predictions
+		SELECT id, COALESCE(clip_id, '') AS clip_id, COALESCE(source, '') AS source,
+			date, day::text AS day, COALESCE(topic, '') AS topic,
+			COALESCE(event_type, '') AS event_type, confidence,
+			COALESCE(quote, '') AS quote, quote_start, created_at
+		FROM predictions
 		WHERE day >= $1
 		ORDER BY day ASC
 		LIMIT $2`,
