@@ -9,22 +9,29 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"kommtkevinonline.de/models"
 )
 
+// Twitch rotates the refresh token on every refresh and invalidates the old
+// one, so two concurrent refreshes can permanently lose the credentials.
+var refreshMu sync.Mutex
+
 func RefreshToken() {
+	refreshMu.Lock()
+	defer refreshMu.Unlock()
+
 	token, err := models.TwitchToken{}.Get()
 	if err != nil {
 		log.Printf("Failed to get twitch login data: %v", err)
 		return
 	}
 
-	// Check if the token is still valid
+	// Refresh slightly early so an about-to-expire token is never handed out.
 	expiryTime := token.CreatedAt.Add(time.Duration(token.ExpiresIn) * time.Second)
-	if time.Now().Before(expiryTime) {
-		fmt.Println("Token is still valid, no refresh needed")
+	if time.Now().Add(time.Minute).Before(expiryTime) {
 		return
 	}
 
@@ -59,7 +66,12 @@ func RefreshToken() {
 		return
 	}
 
-	token.Save()
+	if err := token.Save(); err != nil {
+		// Losing the rotated refresh token here bricks auth until a manual
+		// re-login, so make it loud.
+		log.Printf("CRITICAL: failed to persist rotated twitch token: %v", err)
+		return
+	}
 	fmt.Println("Token refreshed successfully")
 }
 
@@ -125,7 +137,11 @@ func SetupOauth() {
 			return
 		}
 
-		token.Save()
+		if err := token.Save(); err != nil {
+			log.Printf("Failed to save twitch token: %v", err)
+			http.Error(w, "Failed to save token", http.StatusInternalServerError)
+			return
+		}
 
 		w.Write([]byte("Twitch login successful! You can close this window."))
 		log.Println("Twitch login successful and data saved.")
